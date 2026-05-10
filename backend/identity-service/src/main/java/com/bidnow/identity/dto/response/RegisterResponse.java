@@ -16,6 +16,7 @@ public class RegisterResponse {
 
     private UUID userId;
     private String email;
+    private String accountStatus;
     private Boolean isEmailVerified;
     private Boolean isActive;
     private LocalDateTime createdAt;
