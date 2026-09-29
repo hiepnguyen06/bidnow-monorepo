@@ -16,7 +16,7 @@ import java.util.UUID;
  * must stay identical to auction-service's {@code BidContextResponse}.
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
