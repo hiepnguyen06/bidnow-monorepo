@@ -717,13 +717,13 @@ Concept: "The clock is the auctioneer." The page shows real-time bidding instead
 - The old stats strip (50K+ users, $2.5M+, 4.8 rating), "Featured Picks" grid and "Why Trust BidNow?" cards were removed.
 - **Libraries:** `three`, `@react-three/fiber`, `@react-three/drei`, `motion`, `@number-flow/react`.
 
-### About page (`/about`)
+### Showcase page (`apps/landing`, served at `/`)
 
-A technical showcase, not a company story: how BidNow is built and where it will run. Server component; copy and lists live in `lib/about.ts` (covered by `about.test.ts`). Sections, top to bottom:
+A technical showcase, not a company story: how BidNow is built and where it will run. It lives in the static `apps/landing` site (moved out of the web app, whose `/about` now redirects to it). Server component; copy and lists live in `apps/landing/lib/about.ts` (covered by `about.test.ts`). Sections, top to bottom:
 
 - **Hero:** always dark (`dark` class), eyebrow, headline, two CTAs and a four-fact strip (modules, DB ownership, service-to-service, live updates).
 - **Design principles:** four numbered cards (database per service, one door in, events for what can wait, live by default).
-- **Microservices (`#architecture`):** `ServiceMapDiagram` — gateway, Eureka, the six domain services with ports and data stores, three Feign calls and the Kafka bus — followed by three notes (request path, synchronous calls, events and audit). Ports, topics and Feign links mirror `backend/CLAUDE.md` and the services' `feign/` and `kafka/` packages; update the diagram when they change.
+- **Microservices (`#architecture`):** `ServiceMapDiagram` — gateway, Eureka, the six domain services with ports and data stores, three Feign calls and the Kafka bus — followed by three notes (request path, synchronous calls, events and audit). Ports, topics and Feign links mirror `services/CLAUDE.md` and the services' `feign/` and `kafka/` packages; update the diagram when they change.
 - **Target deployment on AWS (`#aws`):** always dark. `AwsArchitectureDiagram` shows CloudFront and S3 at the edge, one ALB with path rules, two Auto Scaling Groups (Next.js; gateway plus services) across two AZs, and RDS PostgreSQL, ElastiCache Redis and MSK in the data tier. It is labelled a *target*: the CD workflow (`.github/workflows/cd-deploy.yml`) is still disabled.
 - **Tech stack:** four grouped lists (frontend, backend, data and messaging, quality and delivery) on a tinted band.
 - **Developers:** names and GitHub links only.
@@ -789,7 +789,7 @@ Rationale: tree-shakeable, SVG strokes at 1.5px, 1000+ icons, React-first, TypeS
 ## 10. File & Folder Structure
 
 ```
-frontend/
+apps/web/
 ├── app/
 │   ├── globals.css                    ← shadcn vars + BidNow extended tokens + @keyframes
 │   ├── layout.tsx                     ← Add DM_Sans, ThemeProvider, <Toaster />

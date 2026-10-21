@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { SiteHeader } from '@/components/SiteHeader'
+import { SiteFooter } from '@/components/SiteFooter'
 import { Section, SectionHeading } from '@/components/home/Section'
 import { ServiceMapDiagram } from '@/components/about/ServiceMapDiagram'
 import { AwsArchitectureDiagram } from '@/components/about/AwsArchitectureDiagram'
@@ -16,10 +16,10 @@ import {
   githubUrl,
   initials,
 } from '@/lib/about'
-import { ROUTES } from '@/lib/navigation'
+import { REPO_URL } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'About',
+  title: 'Architecture',
   description:
     'How BidNow is built: eight Spring Boot microservices, Kafka events, live WebSocket updates, and the three-tier AWS deployment behind it.',
 }
@@ -37,7 +37,7 @@ const DIAGRAM_FRAME =
 export default function AboutPage() {
   return (
     <>
-      <Header />
+      <SiteHeader />
       <main id="main-content" className="flex-1">
         {/* Hero: always dark, like the homepage */}
         <section className="dark bg-[var(--color-brand-900)] text-foreground">
@@ -69,10 +69,10 @@ export default function AboutPage() {
                 variant="outline"
                 size="xl"
                 className="h-12 border-white/35 bg-transparent px-6 text-white hover:bg-white/10"
-                render={<Link href={ROUTES.browse} />}
+                render={<a href={REPO_URL} />}
                 nativeButton={false}
               >
-                Browse auctions
+                View the source
               </Button>
             </div>
             <dl className="mt-16 grid grid-cols-2 gap-x-6 border-t border-[var(--color-border-default)] md:mt-20 md:grid-cols-4">
@@ -207,7 +207,7 @@ export default function AboutPage() {
           </ul>
         </Section>
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   )
 }

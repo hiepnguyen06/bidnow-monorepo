@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Separator } from '@/components/ui/separator'
+import { LANDING_URL, isExternalHref } from '@/lib/navigation'
 import { BidNowMark } from '@/components/shared/BidNowMark'
 
 const LINKS = {
@@ -15,7 +16,7 @@ const LINKS = {
     { label: 'Profile',   href: '/profile' },
   ],
   Company: [
-    { label: 'About',       href: '/about' },
+    { label: 'About',       href: LANDING_URL },
     { label: 'Contact',     href: '/contact' },
     { label: 'Accessibility', href: '/accessibility' },
   ],
@@ -53,12 +54,22 @@ export function Footer() {
               <ul className="flex flex-col gap-2">
                 {links.map(({ label, href }) => (
                   <li key={href}>
-                    <Link
-                      href={href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {label}
-                    </Link>
+                    {isExternalHref(href) ? (
+                      <a
+                        href={href}
+                        rel="noopener"
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={href}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
