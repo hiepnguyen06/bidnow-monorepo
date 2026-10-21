@@ -1,6 +1,6 @@
 ## 6. Media Service Tables (notifications)
 
-Tables are prefixed `media_` (renamed from `notif_` in migration 04). Source of truth: `backend/media-service/src/main/resources/db/changelog/migrations/`.
+Tables are prefixed `media_` (renamed from `notif_` in migration 04). Source of truth: `services/media-service/src/main/resources/db/changelog/migrations/`.
 
 Migrations, in changelog order: `01` initial notification schema, `02` seeded templates, `03` OTP templates, `04` rename `notif_*` to `media_*` and add `media_assets`, `05` audit logs, `06` notification pipeline (dedup, soft delete, auction projection), `07` event templates, `08` fix literal `\n` in seeded template bodies.
 

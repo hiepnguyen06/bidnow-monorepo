@@ -1,4 +1,4 @@
-// backend/bidding-service/src/test/java/com/bidnow/bidding/bdd/config/CucumberSpringConfig.java
+// services/bidding-service/src/test/java/com/bidnow/bidding/bdd/config/CucumberSpringConfig.java
 package com.bidnow.bidding.bdd.config;
 
 import com.bidnow.bdd.container.KafkaContainerSupport;

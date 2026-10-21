@@ -3,8 +3,14 @@ name: Docker Build
 on:
   pull_request:
     branches: [main, develop]
+    paths:
+      - "services/**"
+      - ".github/workflows/docker-build.yml"
   push:
     branches: [main, develop]
+    paths:
+      - "services/**"
+      - ".github/workflows/docker-build.yml"
 
 jobs:
   docker-build:
@@ -36,7 +42,8 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: backend/${{ matrix.service }}
+          context: services
+          file: services/${{ matrix.service }}/Dockerfile
           push: ${{ github.event_name == 'push' }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:${{ github.sha }}

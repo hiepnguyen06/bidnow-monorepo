@@ -47,8 +47,11 @@ We are a core team of 2 passionate engineers:
 ## 📁 Project Structure
 
 ```
-bidnow/
-├── backend/            # Java microservices (Spring Boot)
+bidnow-monorepo/
+├── apps/
+│   ├── web/            # Next.js main app
+│   └── landing/        # Static showcase site (architecture, stack, features)
+├── services/           # Java microservices (Spring Boot, Maven multi-module)
 │   ├── api-gateway/
 │   ├── discovery-service/
 │   ├── identity-service/
@@ -57,12 +60,12 @@ bidnow/
 │   ├── bidding-service/
 │   ├── wallet-service/
 │   ├── media-service/
-│   ├── common/
-│   └── docker-compose.yml
-├── frontend/           # Next.js frontend
-├── docker/             # Docker infrastructure configs
+│   ├── common/         # Shared Java module
+│   └── bdd-support/    # Shared BDD test support
+├── infra/
+│   ├── local/          # Docker Compose stack for local development
+│   └── terraform/      # Reserved for AWS infrastructure
 ├── docs/               # Technical documentation & diagrams
-├── common-resources/   # Shared templates and assets (git submodule)
 ├── .github/            # CI workflows & PR templates
 └── README.md
 ```
@@ -108,15 +111,19 @@ Detailed documentation can be found in the [docs/](./docs/) directory:
 
 ```bash
 # Clone the repository
-git clone <repo-url>
-cd bidnow
+git clone https://github.com/hiepnguyen06/bidnow-monorepo.git
+cd bidnow-monorepo
 
-# Start all backend services
-cd backend
-docker-compose up -d
+# Start the whole stack (infrastructure, services, web app)
+docker compose -f infra/local/docker-compose.yml up -d
 
-# Start the frontend
-cd ../frontend
+# Or run the web app on its own
+cd apps/web
+npm install
+npm run dev
+
+# Landing site
+cd ../landing
 npm install
 npm run dev
 ```

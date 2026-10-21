@@ -49,7 +49,7 @@ The audit logging system captures a complete trail of all significant actions ac
 
 ## Core Components
 
-### Common Module (`backend/common/`)
+### Common Module (`services/common/`)
 
 | Component | Path | Purpose |
 |-----------|------|---------|

@@ -7,7 +7,7 @@ calls go through RestAssured against the live server port.
 ## Module structure
 
 ```
-backend/
+services/
 ├── bdd-support/                          # Shared BDD infrastructure (this module)
 │   └── src/main/java/com/bidnow/bdd/
 │       ├── client/BddRestClient.java     # RestAssured wrapper pre-configured with server port
@@ -49,7 +49,7 @@ backend/
 ## Running the tests
 
 ```bash
-# From backend/ — run all BDD tests in a single service
+# From services/ — run all BDD tests in a single service
 mvn test -pl identity-service -Dtest=CucumberTest
 mvn test -pl user-service -Dtest=CucumberTest
 

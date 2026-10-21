@@ -1,4 +1,4 @@
-// backend/bidding-service/src/test/java/com/bidnow/bidding/bdd/steps/MyActiveBidsSteps.java
+// services/bidding-service/src/test/java/com/bidnow/bidding/bdd/steps/MyActiveBidsSteps.java
 package com.bidnow.bidding.bdd.steps;
 
 import com.bidnow.bdd.client.BddRestClient;

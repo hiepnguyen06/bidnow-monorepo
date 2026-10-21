@@ -22,7 +22,7 @@
 
 ## Phase 1 — `globals.css` Full Token Rewrite
 
-**File:** `frontend/app/globals.css`
+**File:** `apps/web/app/globals.css`
 
 Replace the shadcn-generated stub with a full dual-layer token file.
 

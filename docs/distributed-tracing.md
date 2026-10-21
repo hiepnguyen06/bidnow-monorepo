@@ -69,7 +69,7 @@ Every service writes logs like this:
 
 ## Core Components
 
-### Common Module (`backend/common/`)
+### Common Module (`services/common/`)
 
 | Component | Path | Purpose |
 |-----------|------|---------|
@@ -222,7 +222,7 @@ If the service does **not** depend on `common` (unusual), add these to its `pom.
 
 ### Step 2: Copy `logback-spring.xml`
 
-Copy `backend/common/src/main/resources/logback-spring.xml` to `src/main/resources/` of the new service. No changes needed — it reads `spring.application.name` automatically.
+Copy `services/common/src/main/resources/logback-spring.xml` to `src/main/resources/` of the new service. No changes needed — it reads `spring.application.name` automatically.
 
 ### Step 3: Add sampling config to `application.yml`
 

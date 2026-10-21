@@ -6,9 +6,10 @@ Welcome to the BidNow project! This `AGENTS.md` file is designed to provide you 
 **BidNow** is a modern, high-performance E-commerce platform specialized in real-time auctions. 
 The system leverages an event-driven microservices architecture to manage real-time English auction models, auto-bidding, anti-sniping features, and instant websocket notifications.
 
-The project is split into two main directories:
-- `/backend`: Java 17 / Spring Boot 3.x microservices.
-- `/frontend`: Next.js 14 / TypeScript frontend.
+The project is a monorepo with these top-level directories:
+- `/services`: Java 17 / Spring Boot 3.x microservices (Maven multi-module).
+- `/apps`: user-facing apps. `apps/web` is the Next.js 14 / TypeScript main app; `apps/landing` is the static showcase site.
+- `/infra`: `infra/local` (local Docker Compose stack) and `infra/terraform` (reserved for AWS Terraform).
 - `/docs`: Technical documentation and architecture diagrams.
 
 Before making any significant architectural changes, always read the relevant documentation in `/docs` to align with the core requirements.
@@ -47,14 +48,14 @@ Example: `feat(bidding): implement anti-sniping time extension`
 ## 🧠 Core Agent Directives
 
 1. **Be Concise and Precise:** Do not output unnecessary conversational text. When asked to write or edit code, focus on the implementation.
-2. **Review Existing Context First:** Before creating a new component or service, check if a shared template or similar implementation already exists in `/common-resources` or other services.
+2. **Review Existing Context First:** Before creating a new component or service, check if a shared template or similar implementation already exists in `libs`, `services` or `apps`.
 3. **Respect Microservice Boundaries:** Do not bleed domain logic from the Bidding Service into the User Service, for example. Refer to `docs/architecture.md` for boundary definitions.
 4. **Update Documentation:** If you alter the system's architecture, add a new microservice, or change the API surface, you MUST update the respective markdown files in `/docs`.
 5. **No Destructive Operations Without Confirmation:** Do not delete databases or run destructive migrations without explicit user approval.
 6. **Testing:** Write unit tests for your code. The backend uses JUnit/Mockito, and the frontend should be tested where appropriate.
 
 ## 🏃 Commands to Remember
-- Backend Build: `cd backend && ./mvnw clean install` (if wrapper exists, or standard `mvn`)
-- Frontend Dev: `cd frontend && npm run dev` (or `pnpm`/`yarn` depending on lockfile presence)
+- Backend Build: `cd services && ./mvnw clean install` (if wrapper exists, or standard `mvn`)
+- Web Dev: `cd apps/web && npm run dev` (or `pnpm`/`yarn` depending on lockfile presence)
 
 *Note: As the project evolves, this AGENTS.md file should be updated to reflect new operational context, tools, and scripts.*

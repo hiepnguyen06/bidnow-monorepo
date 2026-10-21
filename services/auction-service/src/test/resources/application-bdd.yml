@@ -1,4 +1,4 @@
-# backend/auction-service/src/test/resources/application-bdd.yml
+# services/auction-service/src/test/resources/application-bdd.yml
 spring:
   cloud:
     discovery:

@@ -8,8 +8,9 @@ This document defines the workflow and rules to ensure consistency and code qual
 # 📂 Project Structure
 
 ```
-/backend
-/frontend
+/apps
+/services
+/infra
 /docs
 ```
 

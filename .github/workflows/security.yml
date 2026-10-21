@@ -3,8 +3,16 @@ name: Security
 on:
   pull_request:
     branches: [main, develop]
+    paths:
+      - "services/**"
+      - "apps/**"
+      - ".github/workflows/security.yml"
   push:
     branches: [main, develop]
+    paths:
+      - "services/**"
+      - "apps/**"
+      - ".github/workflows/security.yml"
   schedule:
     - cron: "0 0 * * 1"
 
@@ -36,8 +44,8 @@ jobs:
       - name: Build backend for CodeQL
         if: matrix.language == 'java'
         run: mvn package -DskipTests
-        working-directory: backend
-      - name: Autobuild (frontend)
+        working-directory: services
+      - name: Autobuild (web and landing)
         if: matrix.language == 'javascript'
         uses: github/codeql-action/autobuild@v3
       - name: Perform CodeQL Analysis

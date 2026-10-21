@@ -1,4 +1,4 @@
-// backend/auction-service/src/test/java/com/bidnow/auction/bdd/CucumberTest.java
+// services/auction-service/src/test/java/com/bidnow/auction/bdd/CucumberTest.java
 package com.bidnow.auction.bdd;
 
 import org.junit.platform.suite.api.ConfigurationParameter;

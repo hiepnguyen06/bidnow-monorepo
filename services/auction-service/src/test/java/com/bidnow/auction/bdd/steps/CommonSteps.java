@@ -1,4 +1,4 @@
-// backend/auction-service/src/test/java/com/bidnow/auction/bdd/steps/CommonSteps.java
+// services/auction-service/src/test/java/com/bidnow/auction/bdd/steps/CommonSteps.java
 package com.bidnow.auction.bdd.steps;
 
 import com.bidnow.bdd.context.ScenarioContext;

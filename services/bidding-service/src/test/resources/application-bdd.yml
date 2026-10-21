@@ -1,4 +1,4 @@
-# backend/bidding-service/src/test/resources/application-bdd.yml
+# services/bidding-service/src/test/resources/application-bdd.yml
 spring:
   cloud:
     discovery:

@@ -48,9 +48,9 @@ especially for the bidding engine).
 
 ### Build Instructions
 
-1. Navigate to the `backend/` directory:
+1. Navigate to the `services/` directory:
    ```bash
-   cd backend
+   cd services
    ```
 2. Build all modules and install the common library:
    ```bash

@@ -1,4 +1,4 @@
-// backend/auction-service/src/test/java/com/bidnow/auction/bdd/steps/SellerAuctionSteps.java
+// services/auction-service/src/test/java/com/bidnow/auction/bdd/steps/SellerAuctionSteps.java
 package com.bidnow.auction.bdd.steps;
 
 import com.bidnow.bdd.client.BddRestClient;

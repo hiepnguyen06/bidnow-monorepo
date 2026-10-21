@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Run Commands
 
 ```bash
-# Build all modules (must run from backend/ root)
+# Build all modules (must run from services/ root)
 mvn clean install
 
 # Build a specific service without running tests

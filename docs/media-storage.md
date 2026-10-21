@@ -9,7 +9,7 @@ Browser ◀──GET──── CloudFront (OAC) ◀─────────
 
 - media-service stores/returns `publicUrl = {CDN_BASE_URL}/{s3Key}` (`MediaServiceImpl.buildPublicUrl`). Downstream services (auction, user) persist that full URL.
 - Keys are `uploads/{ownerId}/{uuid}.{ext}` (server upload) or `uploads/{uuid}.{ext}` (presigned PUT). They are never overwritten, so objects are uploaded with `Cache-Control: public, max-age=31536000, immutable`.
-- The frontend uses full URLs as-is; a bare key is resolved against `NEXT_PUBLIC_CDN_URL` (`frontend/lib/image-utils.ts`).
+- The frontend uses full URLs as-is; a bare key is resolved against `NEXT_PUBLIC_CDN_URL` (`apps/web/lib/image-utils.ts`).
 
 ## Configuration
 

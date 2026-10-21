@@ -145,7 +145,7 @@ Winner payment hold created when an auction ends with a winner (48 h deadline by
 
 Indexes: `idx_payment_holds_winner_status` (`winner_user_id`, `status`), `idx_payment_holds_status_deadline` (`status`, `deadline`).
 
-Other wallet tables (`deposit_locks`, `auction_cancellations`) are defined in `backend/wallet-service/src/main/resources/db/changelog/migrations/`.
+Other wallet tables (`deposit_locks`, `auction_cancellations`) are defined in `services/wallet-service/src/main/resources/db/changelog/migrations/`.
 
 ---
 

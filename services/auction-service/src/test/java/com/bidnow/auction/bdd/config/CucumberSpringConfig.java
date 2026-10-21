@@ -1,4 +1,4 @@
-// backend/auction-service/src/test/java/com/bidnow/auction/bdd/config/CucumberSpringConfig.java
+// services/auction-service/src/test/java/com/bidnow/auction/bdd/config/CucumberSpringConfig.java
 package com.bidnow.auction.bdd.config;
 
 import com.bidnow.auction.AuctionApplication;

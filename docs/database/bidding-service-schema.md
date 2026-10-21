@@ -1,6 +1,6 @@
 # Bidding Service Schema (`bidding_db`)
 
-Owned exclusively by bidding-service. Migrations: `backend/bidding-service/src/main/resources/db/changelog/`.
+Owned exclusively by bidding-service. Migrations: `services/bidding-service/src/main/resources/db/changelog/`.
 
 ## bids
 

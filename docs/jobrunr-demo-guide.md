@@ -30,7 +30,7 @@ In BidNow, JobRunr will be used to:
 ## Start the Demo
 
 ```bash
-# From the backend/ root
+# From the services/ root
 mvn spring-boot:run -pl auction-service
 ```
 
