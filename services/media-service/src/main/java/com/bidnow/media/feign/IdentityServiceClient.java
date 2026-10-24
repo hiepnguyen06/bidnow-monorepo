@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@FeignClient(name = "identity-service")
+@FeignClient(name = "identity-service", url = "${identity-service.url:}")
 public interface IdentityServiceClient {
 
     @GetMapping("/api/v1/users/internal/active-emails")

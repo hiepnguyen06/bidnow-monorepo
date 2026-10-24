@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "user-service")
+@FeignClient(name = "user-service", url = "${user-service.url:}")
 public interface UserServiceClient {
 
     @GetMapping("/api/v1/users/internal/{userId}/summary")
