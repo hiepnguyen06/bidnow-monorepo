@@ -11,7 +11,8 @@ locals {
   })
 
   log_options = {
-    "awslogs-group"  = "/ecs/${var.name}"
+    # Referencing the log group orders it before the task definition (and tasks) on create and after them on destroy.
+    "awslogs-group"  = aws_cloudwatch_log_group.this.name
     "awslogs-region" = var.aws_region
   }
 
@@ -26,7 +27,7 @@ locals {
 
   db_init_container = {
     name      = "db-init"
-    image     = "postgres:15-alpine"
+    image     = "public.ecr.aws/docker/library/postgres:15-alpine"
     essential = false
     command   = ["sh", "-c", local.db_init_script]
     environment = [

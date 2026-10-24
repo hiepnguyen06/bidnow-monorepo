@@ -1,6 +1,9 @@
 output "secret_arns" {
   description = "Secret ARNs keyed by db_password, jwt_secret, mail_host, mail_port, mail_username, mail_password, mail_from."
   value       = { for k, s in aws_secretsmanager_secret.this : k => s.arn }
+
+  # Consumers (task definitions) must wait for the secret values, not just the empty secret shells.
+  depends_on = [aws_secretsmanager_secret_version.this]
 }
 
 output "db_password_value" {

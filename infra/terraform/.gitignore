@@ -9,3 +9,6 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# Only the root stacks keep provider lock files; modules are always initialised through a root (or for tests).
+modules/**/.terraform.lock.hcl

@@ -48,9 +48,9 @@ run "init_container_defined_when_database_set" {
   assert {
     condition = length([
       for c in jsondecode(aws_ecs_task_definition.this.container_definitions) : c
-      if c.name == "db-init" && c.image == "postgres:15-alpine" && c.essential == false
+      if c.name == "db-init" && c.image == "public.ecr.aws/docker/library/postgres:15-alpine" && c.essential == false
     ]) == 1
-    error_message = "db-init must be a non-essential postgres:15-alpine container."
+    error_message = "db-init must be a non-essential public.ecr.aws/docker/library/postgres:15-alpine container."
   }
 
   assert {
