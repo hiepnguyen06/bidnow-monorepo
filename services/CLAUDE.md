@@ -33,6 +33,7 @@ Each service reads these from the environment (no `.env` file in repo):
 |-------------------------------------------------------------------------------------|----------------------------------------------------------------------|
 | `JWT_SECRET`                                                                        | api-gateway, identity-service                                        |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`                                              | identity-service, user-service, media-service (and others with a DB) |
+| `CORS_ALLOWED_ORIGINS`                                                              | api-gateway (default: `http://localhost:3000`; comma-separated list) |
 | `KAFKA_BOOTSTRAP_SERVERS`                                                           | all services (default: `localhost:9092`)                             |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`             | media-service                                                        |
 | `AWS_REGION`, `AWS_BUCKET_NAME`, `CDN_BASE_URL`                                     | media-service (S3 uploads; images served via CloudFront)             |
