@@ -227,6 +227,10 @@ graph TD
 - **Database:** Managed PostgreSQL (e.g., AWS RDS or Supabase).
 - **CI/CD:** GitHub Actions for automated testing and deployment.
 
+### AWS deployment
+
+The demo deployment runs on AWS (CloudFront, ALB, ECS Fargate with Service Connect instead of Eureka, RDS, ElastiCache, MSK, S3), defined in Terraform under [`infra/terraform`](../infra/terraform/README.md). See the [AWS deployment guide and runbook](deployment-aws.md) and the [architecture diagram](diagrams/08-aws-deployment.md).
+
 ---
 
 ## Key Design Decisions
