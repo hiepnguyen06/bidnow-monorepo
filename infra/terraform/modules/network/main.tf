@@ -143,9 +143,6 @@ resource "aws_route_table" "data" {
 
   vpc_id = aws_vpc.this.id
 
-  # Explicitly empty: Terraform will remove any route added out of band.
-  route = []
-
   tags = merge(local.tags, { Name = "${var.name}-data-${count.index + 1}" })
 }
 
@@ -178,11 +175,6 @@ resource "aws_security_group" "alb" {
   description = "ALB: HTTP from CloudFront origin-facing addresses only"
   vpc_id      = aws_vpc.this.id
 
-  # Rules live in separate aws_vpc_security_group_*_rule resources; empty inline
-  # lists make Terraform drop anything added out of band.
-  ingress = []
-  egress  = []
-
   tags = merge(local.tags, { Name = "${var.name}-alb" })
 }
 
@@ -190,9 +182,6 @@ resource "aws_security_group" "app" {
   name        = "${var.name}-app"
   description = "ECS tasks: traffic from the ALB and from other tasks"
   vpc_id      = aws_vpc.this.id
-
-  ingress = []
-  egress  = []
 
   tags = merge(local.tags, { Name = "${var.name}-app" })
 }
