@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services/auth.service";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export const TOKEN_REFRESH_BUFFER_MS = 60_000;
 

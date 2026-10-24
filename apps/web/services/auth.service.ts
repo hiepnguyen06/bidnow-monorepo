@@ -6,7 +6,7 @@ import {
   ResendOtpResponse,
 } from "@/types/api/auth.api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export const authService = {
   async register(

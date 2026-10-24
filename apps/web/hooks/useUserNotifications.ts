@@ -49,6 +49,7 @@ export function useUserNotifications(): void {
     const endpoint = resolveWsEndpoint({
       wsUrl:  process.env.NEXT_PUBLIC_WS_URL,
       apiUrl: process.env.NEXT_PUBLIC_API_URL,
+      origin: window.location.origin,
     })
 
     const onMessage = (message: IMessage) => {

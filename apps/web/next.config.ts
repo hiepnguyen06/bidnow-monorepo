@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
     return [{ source: '/about', destination: LANDING_URL, permanent: false }];
   },
   images: {
+    // Behind CloudFront the optimizer would fetch /uploads/... from the container itself.
+    unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
     dangerouslyAllowLocalIP: true,
     qualities: [75, 90],
     remotePatterns: [

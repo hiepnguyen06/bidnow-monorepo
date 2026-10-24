@@ -48,6 +48,7 @@ export function useLiveLot(lot: AuctionBrowseItem | null): LiveLot | null {
     const endpoint = resolveWsEndpoint({
       wsUrl:  process.env.NEXT_PUBLIC_WS_URL,
       apiUrl: process.env.NEXT_PUBLIC_API_URL,
+      origin: window.location.origin,
     })
     try {
       new URL(endpoint)

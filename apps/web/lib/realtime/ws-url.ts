@@ -1,9 +1,11 @@
 const WS_PATH = '/ws-notifications/websocket' // raw-WebSocket transport of the SockJS endpoint
 const DEFAULT_API_URL = 'http://localhost:8080'
 
-export function resolveWsEndpoint(env: { wsUrl?: string; apiUrl?: string }): string {
+export function resolveWsEndpoint(env: { wsUrl?: string; apiUrl?: string; origin?: string }): string {
   if (env.wsUrl) return env.wsUrl
-  const api = (env.apiUrl || DEFAULT_API_URL).replace(/\/+$/, '')
+  // apiUrl "" means same origin; undefined keeps the local default
+  const base = env.apiUrl === '' && env.origin ? env.origin : env.apiUrl || DEFAULT_API_URL
+  const api = base.replace(/\/+$/, '')
   return api.replace(/^http/, 'ws') + WS_PATH
 }
 
