@@ -11,6 +11,18 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
+describe('auctionService public loaders when the gateway is unreachable', () => {
+  it('return their empty results instead of throwing', async () => {
+    mockFetch.mockImplementation(() => Promise.reject(new TypeError('fetch failed')))
+
+    expect(await auctionService.getBrowseAuctions({ size: 12 })).toEqual({
+      items: [], total: 0, totalPages: 0, page: 0,
+    })
+    expect(await auctionService.getCategoryCounts()).toEqual([])
+    expect(await auctionService.getAuctionById('a-1')).toBeNull()
+  })
+})
+
 describe('auctionService.cancelAuction', () => {
   beforeEach(() => mockFetch.mockReset())
 

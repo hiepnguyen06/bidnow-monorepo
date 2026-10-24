@@ -5,8 +5,7 @@ import {
   VerifyOtpResponse,
   ResendOtpResponse,
 } from "@/types/api/auth.api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { apiBaseUrl } from "@/lib/api-base";
 
 export const authService = {
   async register(
@@ -14,7 +13,7 @@ export const authService = {
     email: string,
     password: string,
   ): Promise<ApiResponse<RegisterResponse>> {
-    const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
@@ -32,7 +31,7 @@ export const authService = {
     email: string,
     otp: string,
   ): Promise<ApiResponse<VerifyOtpResponse>> {
-    const response = await fetch(`${API_URL}/api/v1/auth/verify-otp`, {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/auth/verify-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, otp }),
@@ -47,7 +46,7 @@ export const authService = {
   },
 
   async resendOtp(email: string): Promise<ApiResponse<ResendOtpResponse>> {
-    const response = await fetch(`${API_URL}/api/v1/auth/resend-otp`, {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/auth/resend-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -65,7 +64,7 @@ export const authService = {
     email: string,
     password: string,
   ): Promise<ApiResponse<LoginResponse>> {
-    const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -80,7 +79,7 @@ export const authService = {
   },
 
   async refresh(refreshToken: string): Promise<ApiResponse<LoginResponse>> {
-    const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
@@ -100,7 +99,7 @@ export const authService = {
       headers["Authorization"] = `Bearer ${accessToken}`;
     }
 
-    const response = await fetch(`${API_URL}/api/v1/auth/logout`, {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/auth/logout`, {
       method: "POST",
       headers,
       body: JSON.stringify({ refreshToken }),
