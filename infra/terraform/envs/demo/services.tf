@@ -45,6 +45,8 @@ locals {
         BIDDING_SERVICE_URL  = local.service_urls.bidding
         WALLET_SERVICE_URL   = local.service_urls.wallet
         MEDIA_SERVICE_URL    = local.service_urls.media
+        # Browsers send Origin: https://<cloudfront domain> while the gateway sees the ALB as Host.
+        CORS_ALLOWED_ORIGINS = local.public_url
       }
       secrets = { JWT_SECRET = "jwt_secret" }
     }

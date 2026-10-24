@@ -157,5 +157,6 @@ module "ecs_service" {
 
   task_policy_json = each.value.task_policy_json
 
-  depends_on = [terraform_data.ecr_images_pushed]
+  # module.alb: a target group must be attached to the listener (rules) before an ECS service uses it.
+  depends_on = [terraform_data.ecr_images_pushed, module.alb]
 }

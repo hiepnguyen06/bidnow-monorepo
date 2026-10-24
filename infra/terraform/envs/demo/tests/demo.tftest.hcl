@@ -387,6 +387,20 @@ run "gateway_has_all_six_service_urls" {
   }
 }
 
+run "gateway_allows_cloudfront_origin" {
+  command = apply
+
+  assert {
+    condition     = local.services["api-gateway"].env["CORS_ALLOWED_ORIGINS"] == "https://d111111abcdef8.cloudfront.net"
+    error_message = "api-gateway must allow the CloudFront origin in CORS."
+  }
+
+  assert {
+    condition     = [for k, s in local.services : k if contains(keys(s.env), "CORS_ALLOWED_ORIGINS")] == ["api-gateway"]
+    error_message = "Only api-gateway gets CORS_ALLOWED_ORIGINS."
+  }
+}
+
 run "feign_callers_have_their_service_urls" {
   command = apply
 
