@@ -212,8 +212,8 @@ run "eight_services_defined" {
   }
 
   assert {
-    condition     = length(local.services["frontend"].env) == 0 && length(local.services["frontend"].secrets) == 0
-    error_message = "The frontend image is built with same-origin URLs and needs no runtime env or secrets."
+    condition     = keys(local.services["frontend"].env) == ["API_INTERNAL_URL"] && length(local.services["frontend"].secrets) == 0
+    error_message = "The frontend image is built with same-origin URLs; its only runtime env is API_INTERNAL_URL and it has no secrets."
   }
 
   assert {
@@ -384,6 +384,20 @@ run "gateway_has_all_six_service_urls" {
       local.services["api-gateway"].env["${upper(replace(trimsuffix(k, "-service"), "-", "_"))}_SERVICE_URL"] == "http://${k}:${local.services[k].port}"
     ])
     error_message = "Each gateway URL must match the target service's own name and port."
+  }
+}
+
+run "frontend_has_internal_api_url" {
+  command = apply
+
+  assert {
+    condition     = local.services["frontend"].env["API_INTERNAL_URL"] == "http://api-gateway:8080"
+    error_message = "Server Components must reach the gateway through Service Connect at http://api-gateway:8080."
+  }
+
+  assert {
+    condition     = [for k, s in local.services : k if contains(keys(s.env), "API_INTERNAL_URL")] == ["frontend"]
+    error_message = "Only the frontend gets API_INTERNAL_URL."
   }
 }
 

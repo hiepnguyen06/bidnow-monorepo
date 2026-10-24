@@ -180,8 +180,8 @@ run "gateway_health_check_path" {
   }
 
   assert {
-    condition     = aws_lb_target_group.frontend.health_check[0].path == "/" && aws_lb_target_group.frontend.health_check[0].matcher == "200-399"
-    error_message = "Frontend health check must be / expecting 200-399."
+    condition     = aws_lb_target_group.frontend.health_check[0].path == "/healthz" && aws_lb_target_group.frontend.health_check[0].matcher == "200-399"
+    error_message = "Frontend health check must be /healthz expecting 200-399."
   }
 }
 

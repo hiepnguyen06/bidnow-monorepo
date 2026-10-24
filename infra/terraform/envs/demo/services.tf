@@ -29,8 +29,11 @@ locals {
       database = null
       cpu      = 256
       memory   = 512
-      # Same-origin URLs are baked into the image at build time: no runtime env needed.
-      env     = {}
+      # Browser URLs are same-origin and baked into the image at build time. Server Components cannot
+      # fetch a relative URL, so they call the gateway directly over Service Connect.
+      env = {
+        API_INTERNAL_URL = "http://api-gateway:8080"
+      }
       secrets = {}
     }
     "api-gateway" = {
