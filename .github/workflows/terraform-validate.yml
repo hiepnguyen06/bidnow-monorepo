@@ -1,0 +1,59 @@
+name: Terraform Validate
+
+on:
+  pull_request:
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    name: Terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+      - name: terraform fmt -check
+        working-directory: infra/terraform
+        run: terraform fmt -check -recursive
+
+  validate:
+    name: Validate - ${{ matrix.dir }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - infra/terraform/bootstrap
+          - infra/terraform/modules/network
+          - infra/terraform/modules/rds
+          - infra/terraform/modules/elasticache
+          - infra/terraform/modules/msk
+          - infra/terraform/modules/secrets
+          - infra/terraform/modules/s3-media
+          - infra/terraform/modules/alb
+          - infra/terraform/modules/cloudfront
+          - infra/terraform/modules/ecs-cluster
+          - infra/terraform/modules/ecs-service
+          - infra/terraform/envs/demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+      # No AWS credentials: tests use mock providers; nothing is planned or applied.
+      - name: terraform init
+        working-directory: ${{ matrix.dir }}
+        run: terraform init -backend=false -input=false
+      - name: terraform validate
+        working-directory: ${{ matrix.dir }}
+        run: terraform validate
+      - name: terraform test
+        working-directory: ${{ matrix.dir }}
+        run: terraform test
