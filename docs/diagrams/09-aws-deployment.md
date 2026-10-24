@@ -1,6 +1,6 @@
 # AWS Deployment Architecture
 
-Three-tier layout of the `envs/demo` Terraform stack in `ap-southeast-2`. CloudFront is the only public entry point; the ALB accepts traffic only from CloudFront (security group on the managed prefix list plus the secret `X-Origin-Verify` header). Fargate tasks, RDS, ElastiCache and MSK have no public addresses. The `bootstrap` stack (state bucket, ECR, GitHub OIDC role, budget) is applied once and never destroyed. See [deployment-aws.md](../deployment-aws.md) for the runbook.
+Three-tier layout of the `envs/demo` Terraform stack in `ap-southeast-2`. CloudFront is the only public entry point; the ALB accepts traffic only from CloudFront (security group on the managed prefix list plus the secret `X-Origin-Verify` header). Fargate tasks, RDS, ElastiCache and MSK have no public addresses. The `bootstrap` stack (state bucket, ECR, GitHub OIDC role, budget) is applied once and never destroyed. See [deployment-aws.md](../deployment-aws.md) for the runbook. Internal service-to-service calls (Feign, other than the two bidding-service edges shown) and per-service Kafka usage are simplified.
 
 ```mermaid
 flowchart TB
@@ -13,10 +13,10 @@ flowchart TB
 
     subgraph App["Tier 2: application (private app subnets, ECS Fargate)"]
         direction LR
-        FE["frontend :3000"]
-        GW["api-gateway :8080"]
-        subgraph SC["ECS Service Connect namespace bidnow.local"]
+        subgraph SC["ECS Service Connect namespace bidnow.local (all eight services)"]
             direction LR
+            FE["frontend :3000"]
+            GW["api-gateway :8080"]
             ID["identity-service :8081"]
             US["user-service :8082"]
             AU["auction-service :8083"]
@@ -34,7 +34,7 @@ flowchart TB
     end
 
     S3[("S3 media bucket<br/>private, Origin Access Control")]
-    SM["Secrets Manager<br/>DB password, JWT, SMTP, origin header"]
+    SM["Secrets Manager<br/>DB password, JWT, SMTP"]
     NAT["NAT gateway<br/>SMTP, ECR, CloudWatch"]
 
     subgraph Boot["bootstrap stack (never destroyed)"]

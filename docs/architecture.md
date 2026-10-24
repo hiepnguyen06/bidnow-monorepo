@@ -229,7 +229,7 @@ graph TD
 
 ### AWS deployment
 
-The demo deployment runs on AWS (CloudFront, ALB, ECS Fargate with Service Connect instead of Eureka, RDS, ElastiCache, MSK, S3), defined in Terraform under [`infra/terraform`](../infra/terraform/README.md). See the [AWS deployment guide and runbook](deployment-aws.md) and the [architecture diagram](diagrams/08-aws-deployment.md).
+The demo deployment runs on AWS (CloudFront, ALB, ECS Fargate with Service Connect instead of Eureka, RDS, ElastiCache, MSK, S3), defined in Terraform under [`infra/terraform`](../infra/terraform/README.md). See the [AWS deployment guide and runbook](deployment-aws.md) and the [architecture diagram](diagrams/09-aws-deployment.md).
 
 ---
 

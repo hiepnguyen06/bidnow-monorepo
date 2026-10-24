@@ -1,6 +1,6 @@
 # Terraform
 
-AWS infrastructure of BidNow (ECS Fargate, RDS, ElastiCache, MSK, S3, CloudFront), region `ap-southeast-2`. The full runbook (prerequisites, first-run order, smoke checks, destroy and orphan check, troubleshooting) is in [docs/deployment-aws.md](../../docs/deployment-aws.md); the architecture diagram is in [docs/diagrams/08-aws-deployment.md](../../docs/diagrams/08-aws-deployment.md). Local development infrastructure (Postgres, Redis, Kafka) lives in [`../local`](../local).
+AWS infrastructure of BidNow (ECS Fargate, RDS, ElastiCache, MSK, S3, CloudFront), region `ap-southeast-2`. The full runbook (prerequisites, first-run order, smoke checks, destroy and orphan check, troubleshooting) is in [docs/deployment-aws.md](../../docs/deployment-aws.md); the architecture diagram is in [docs/diagrams/09-aws-deployment.md](../../docs/diagrams/09-aws-deployment.md). Local development infrastructure (Postgres, Redis, Kafka) lives in [`../local`](../local).
 
 ## Layout
 

@@ -32,11 +32,11 @@ flowchart LR
     ECR -.->|image pull| SVC
 ```
 
-The detailed diagram is in [diagrams/08-aws-deployment.md](diagrams/08-aws-deployment.md). The design rationale is in [superpowers/specs/2026-10-24-aws-deployment-design.md](superpowers/specs/2026-10-24-aws-deployment-design.md).
+The detailed diagram is in [diagrams/09-aws-deployment.md](diagrams/09-aws-deployment.md). The design rationale is in [superpowers/specs/2026-10-24-aws-deployment-design.md](superpowers/specs/2026-10-24-aws-deployment-design.md).
 
 ## 2. Cost note
 
-While the `envs/demo` stack is running it costs about **$0.6 to $0.8 per hour** (Fargate tasks, one NAT gateway, the ALB, RDS, Redis and two MSK brokers; MSK is the largest line). That is roughly **$17 a day**, and **several hundred dollars a month if left running**. A three-hour demo costs a few dollars.
+While the `envs/demo` stack is running it costs about **$0.6 to $0.8 per hour** (Fargate tasks, one NAT gateway, the ALB, RDS, Redis and two MSK brokers; Fargate and the MSK brokers are the biggest lines). That is roughly **$17 a day**, and **several hundred dollars a month if left running**. A three-hour demo costs a few dollars.
 
 - An AWS Budget alert (created by `bootstrap`, default $30 per month) emails you when spend approaches the limit. It warns; it does not stop anything.
 - **Destroy the stack as soon as you are done** (section 6). Only `bootstrap` (state bucket, ECR images, OIDC, budget) stays, which costs cents per month.
@@ -50,8 +50,11 @@ While the `envs/demo` stack is running it costs about **$0.6 to $0.8 per hour** 
   aws configure --profile bidnow
   export AWS_PROFILE=bidnow
   export AWS_REGION=ap-southeast-2
+  export MSYS_NO_PATHCONV=1
   aws sts get-caller-identity
   ```
+
+  `MSYS_NO_PATHCONV=1` matters on Git Bash for Windows only: MSYS rewrites arguments that look like POSIX paths (for example `/ecs/` becomes `C:/Program Files/Git/ecs/`) before `aws.exe` sees them, which makes log-group commands silently return nothing. It is harmless elsewhere. The blocks below repeat it where a path-like argument is used, so each is copy-pasteable on its own.
 
 - Terraform >= 1.10 (native S3 state locking). `envs/demo` additionally needs the `hashicorp/aws` provider >= 6.5; `terraform init` downloads it automatically.
 - Docker (to build images if you do not use the GitHub workflow for the first push).
@@ -123,16 +126,16 @@ The Deploy workflow reads three repository **variables** (not secrets). From `in
 ```bash
 gh variable set AWS_DEPLOY_ROLE_ARN --body "$(terraform output -raw github_deploy_role_arn)"
 gh variable set AWS_REGION --body "ap-southeast-2"
-gh variable set LANDING_URL --body "https://<your-landing-site-url>"
+gh variable set LANDING_URL --body "https://<your-landing-site-url>"   # skip this line if you have no landing site
 ```
 
-`LANDING_URL` is baked into the frontend image (the landing site is hosted separately); it may be empty. Add `--repo <owner>/<repo>` if you are not inside a clone of it.
+`LANDING_URL` is baked into the frontend image (the landing site is hosted separately). It may be left unset: an unset variable resolves to an empty value in the workflow. Do not set it with an empty body. Add `--repo <owner>/<repo>` if you are not inside a clone of it.
 
 ### 4.3 Get the images into ECR
 
 `envs/demo` refuses to plan until every repository contains the tag in `image_tag` (default `latest`). There are two ways.
 
-**Option A: the Deploy workflow (preferred).** The OIDC trust only allows runs from `refs/heads/main`, so this works only after the `feature/aws-deployment` branch is merged to `main`. Then:
+**Option A: the Deploy workflow (preferred).** The OIDC trust only allows runs from `refs/heads/main`, so this works only after the `feature/aws-deployment` branch is merged to `main`. Merging to `main` itself triggers the workflow through its push trigger (paths `services/**` and `apps/web/**`), so if the three repository variables are set first, no manual run is needed. To start it by hand:
 
 ```bash
 gh workflow run "Deploy to AWS" --ref main
@@ -147,7 +150,7 @@ It builds all eight images, pushes them tagged with the commit SHA and `latest`,
 export AWS_PROFILE=bidnow AWS_REGION=ap-southeast-2
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REGISTRY="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-LANDING_URL="https://<your-landing-site-url>"   # same value as the GitHub variable; may be empty
+LANDING_URL="https://<your-landing-site-url>"   # same value as the GitHub variable; leave empty if unset
 
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
 
@@ -232,11 +235,13 @@ CF_URL=$(terraform output -raw cloudfront_url)
 ALB_DNS=$(terraform output -raw alb_dns_name)
 ```
 
-1. **The ALB is not directly reachable.** Expected `HTTP/1.1 403` (no `X-Origin-Verify` header; if the security group blocks you the request may instead time out, which is also a pass):
+1. **The ALB is not directly reachable.** The ALB security group only admits the CloudFront origin-facing prefix list, so a request from your laptop **times out**. That timeout is the expected result:
 
    ```bash
    curl -i --max-time 15 "http://$ALB_DNS/"
    ```
+
+   Expected: `curl: (28) Connection timed out` (no HTTP response). The listener's default action, `403` unless `X-Origin-Verify` matches, is defence in depth: it answers traffic that arrives from CloudFront IP space (for example another tenant's distribution pointed at this ALB) without the secret header. A `200` here would be a failure.
 
 2. **CloudFront serves the app.** Expected `HTTP/2 200`:
 
@@ -253,51 +258,62 @@ ALB_DNS=$(terraform output -raw alb_dns_name)
 
    A browser login that fails with 403 is a CORS problem (see troubleshooting).
 
-4. **Upload an image through the presigned PUT.** In the app, create an auction and attach an image; it must succeed cross-origin from the CloudFront hostname. To test by hand, take the access token from the login response:
+4. **Upload an image through the presigned PUT.** In the app, create an auction and attach an image; it must succeed cross-origin from the CloudFront hostname. To test by hand, take the access token from the login response (`data.accessToken` inside the `BaseResponse` wrapper):
 
    ```bash
-   TOKEN="<accessToken from the login response>"
+   TOKEN="<data.accessToken from the login response>"
    curl -s -H "Authorization: Bearer $TOKEN" \
      "$CF_URL/api/v1/media/presigned-url?fileName=test.png&contentType=image/png"
    ```
 
-   Copy the presigned URL from the response and PUT a small PNG to it with the same content type, sending the CloudFront origin like a browser would:
+   The response `data` holds `uploadUrl` (the presigned URL), `s3Key` (already starting with `uploads/`), `publicUrl` and `expiresAt`. PUT a small PNG to `data.uploadUrl` with the same content type, sending the CloudFront origin like a browser would:
 
    ```bash
    curl -i -X PUT -H "Content-Type: image/png" -H "Origin: $CF_URL" \
-     --data-binary @test.png "<presigned-url>"
+     --data-binary @test.png "<data.uploadUrl>"
    ```
 
-   Expected `200`. Then fetch the object through CloudFront at `$CF_URL/uploads/<key>` (the key is in the response) and expect `200`.
+   Expected `200`. Then fetch the object through CloudFront at `$CF_URL/<data.s3Key>` (or the `data.publicUrl`; do not add another `/uploads/` prefix) and expect `200`.
 
 5. **Live bid update in two browsers.** Open the same live auction in two different browsers (or one normal and one private window) logged in as different users, place a bid in one, and see the price update in the other without a refresh.
 
-6. **Idle WebSocket survives 90 seconds.** Open an auction page, leave it untouched for 90 seconds (longer than the 60 second CloudFront/ALB idle timeouts), then place a bid from the second browser. The first must still update. You can also watch the socket in the browser dev tools Network tab (WS filter): the connection must stay open with small heartbeat frames about every 10 seconds.
+6. **Idle WebSocket survives 90 seconds.** Open an auction page, leave it untouched for 90 seconds (longer than CloudFront's 60 second origin read timeout; the ALB idle timeout is 120 seconds), then place a bid from the second browser. The first must still update. You can also watch the socket in the browser dev tools Network tab (WS filter): the connection must stay open with small heartbeat frames about every 10 seconds.
 
-7. **Email arrives.** The registration OTP and the welcome email must land in the inbox of the SMTP account configured in `mail`. If not, check the `/ecs/media-service` log group.
+7. **Email arrives.** The registration OTP and the welcome email must land in the inbox of the SMTP account configured in `mail`. If not, check the `/ecs/media-service` log group (`export MSYS_NO_PATHCONV=1` first on Git Bash, then `aws logs tail /ecs/media-service --region ap-southeast-2`).
 
 ## 6. Destroy and orphan check
 
 ```bash
 cd infra/terraform/envs/demo
+export AWS_PROFILE=bidnow
+# Record the stack's VPC id BEFORE destroying; the later checks are scoped to it.
+VPC_ID=$(aws ec2 describe-vpcs --region ap-southeast-2 --filters "Name=tag:Name,Values=bidnow-demo" \
+  --query "Vpcs[0].VpcId" --output text)
+echo "$VPC_ID"
 terraform destroy
 ```
 
-Takes 10 to 20 minutes. Then confirm nothing billable from this stack is left. Every command below should print nothing (or an empty list):
+Takes 10 to 20 minutes. Then confirm nothing billable from this stack is left. Every command below should print nothing (or an empty list). `MSYS_NO_PATHCONV=1` keeps Git Bash from rewriting `/ecs/` into a Windows path, which would make the log-group check pass falsely:
 
 ```bash
+export MSYS_NO_PATHCONV=1
 export AWS_PROFILE=bidnow
 R=ap-southeast-2
 
-# NAT gateways (deleted and deleting ones are fine)
-aws ec2 describe-nat-gateways --region $R --filter "Name=state,Values=pending,available,deleting" \
-  --query "NatGateways[].[NatGatewayId,State]" --output text
+# The VPC itself (expect an InvalidVpcID.NotFound error or an empty result)
+aws ec2 describe-vpcs --region $R --vpc-ids "$VPC_ID" --query "Vpcs[].VpcId" --output text
 
-# Elastic IPs
-aws ec2 describe-addresses --region $R --query "Addresses[].[AllocationId,PublicIp]" --output text
+# NAT gateways in the stack VPC that are not yet deleted (state "deleted" is fine)
+aws ec2 describe-nat-gateways --region $R --filter "Name=vpc-id,Values=$VPC_ID" \
+  "Name=state,Values=pending,available,deleting,failed" --query "NatGateways[].[NatGatewayId,State]" --output text
 
-# Network interfaces
-aws ec2 describe-network-interfaces --region $R --query "NetworkInterfaces[].[NetworkInterfaceId,Description]" --output text
+# Elastic IPs created by this stack (default_tags set Project=bidnow)
+aws ec2 describe-addresses --region $R --filters "Name=tag:Project,Values=bidnow" \
+  --query "Addresses[].[AllocationId,PublicIp]" --output text
+
+# Network interfaces in the stack VPC
+aws ec2 describe-network-interfaces --region $R --filters "Name=vpc-id,Values=$VPC_ID" \
+  --query "NetworkInterfaces[].[NetworkInterfaceId,Description]" --output text
 
 # CloudWatch log groups of the ECS services
 aws logs describe-log-groups --region $R --log-group-name-prefix /ecs/ --query "logGroups[].logGroupName" --output text
@@ -312,12 +328,13 @@ aws rds describe-db-instances --region $R --query "DBInstances[].DBInstanceIdent
 aws elasticache describe-cache-clusters --region $R --query "CacheClusters[].CacheClusterId" --output text
 aws elasticache describe-replication-groups --region $R --query "ReplicationGroups[].ReplicationGroupId" --output text
 
-# Load balancers and CloudFront distributions
+# Load balancers, CloudFront distributions and the media bucket
 aws elbv2 describe-load-balancers --region $R --query "LoadBalancers[].LoadBalancerName" --output text
 aws cloudfront list-distributions --query "DistributionList.Items[].[Id,DomainName]" --output text
+aws s3api list-buckets --query "Buckets[?starts_with(Name,'bidnow-demo')]"
 ```
 
-Expected: nothing from this stack. (`describe-network-interfaces` in the default VPC may show unrelated interfaces; anything whose description mentions ELB, RDS, ElastiCache, Kafka or ECS from the destroyed VPC is an orphan. Delete the leftover resource named in the description, or contact AWS if it is stuck.) A CloudFront distribution may take several minutes to disappear from the list.
+Expected: nothing from this stack (the `list-buckets` query prints `[]`). The stack creates its secrets with `recovery_window_in_days = 0`, so they are deleted immediately: a `bidnow-demo/...` secret that is still listed, even with a `DeletedDate`, is a real orphan. If an ENI remains, its description names the owning resource; delete that resource, or contact AWS if it is stuck. A CloudFront distribution may take several minutes to disappear from the list.
 
 **`bootstrap` is never destroyed** as part of teardown: the state bucket, the ECR repositories with their images, the OIDC provider and deploy role, and the budget remain, so the next `apply` of `envs/demo` is quick and needs no new image push.
 
@@ -338,6 +355,7 @@ Expected: nothing from this stack. (`describe-network-interfaces` in the default
 **A service keeps restarting and the `db-init` container fails.** Each database-backed task runs an idempotent `db-init` container that creates its database on RDS before the service starts. Read its logs:
 
 ```bash
+export MSYS_NO_PATHCONV=1   # Git Bash on Windows: stop /ecs/... being rewritten into a Windows path
 aws logs describe-log-streams --log-group-name /ecs/identity-service --region ap-southeast-2 \
   --log-stream-name-prefix db-init --query "logStreams[].logStreamName" --output text
 aws logs tail /ecs/identity-service --region ap-southeast-2 --log-stream-name-prefix db-init
@@ -353,7 +371,7 @@ aws ecs update-service --cluster bidnow-demo --service api-gateway --force-new-d
 
 Also make sure you open the CloudFront URL, not the ALB address.
 
-**The WebSocket drops after about 60 seconds.** CloudFront and the ALB close idle connections after 60 seconds. The web app and media-service send STOMP heartbeats every 10 seconds to prevent it. If it still drops, the running images are older than the heartbeat change: rebuild and push the images (section 4.3), then force a new deployment of `frontend` and `media-service`.
+**The WebSocket drops after about 60 seconds.** CloudFront closes an origin connection that carries no data for 60 seconds (its origin read timeout; the ALB idle timeout is 120 seconds). The web app and media-service send STOMP heartbeats every 10 seconds to prevent it. If it still drops, the running images are older than the heartbeat change: rebuild and push the images (section 4.3), then force a new deployment of `frontend` and `media-service`.
 
 **Tasks cannot pull images (`CannotPullContainerError`).** The tag does not exist in ECR or the task has no route to ECR; check the NAT gateway exists and the tag is present (section 4.3 verify step).
 
