@@ -1,15 +1,18 @@
-target/
-!**/target/*.jar
-*.iml
-.idea/
+# Build context is services/ (docker build -f services/<name>/Dockerfile services).
+# The image runs the Maven reactor itself, so local build output stays out of the context.
+**/target/
+**/*.iml
+**/.idea/
+**/.vscode/
 .git/
-.gitignore
+**/.gitignore
 .mvn/
 mvnw
 mvnw.cmd
-Dockerfile
+**/Dockerfile
 docker-compose.yml
-node_modules/
-.next/
-out/
-build/
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+**/*.log
