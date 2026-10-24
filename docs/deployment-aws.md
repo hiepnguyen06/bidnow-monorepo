@@ -258,10 +258,19 @@ ALB_DNS=$(terraform output -raw alb_dns_name)
 
    A browser login that fails with 403 is a CORS problem (see troubleshooting).
 
-4. **Upload an image through the presigned PUT.** In the app, create an auction and attach an image; it must succeed cross-origin from the CloudFront hostname. To test by hand, take the access token from the login response (`data.accessToken` inside the `BaseResponse` wrapper):
+   Then prove that CloudFront forwards the `Authorization` header to the ALB with an authenticated call. Take the access token from the login response (`data.accessToken` inside the `BaseResponse` wrapper):
 
    ```bash
    TOKEN="<data.accessToken from the login response>"
+   curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TOKEN" "$CF_URL/api/v1/users/me"
+   ```
+
+   Expected `200` (the body, without `-o /dev/null`, is your profile in `data`). A `401` means the gateway received no token: CloudFront dropped `Authorization` on the way to the ALB. The `/api/*` behaviour uses the managed `CachingDisabled` cache policy with `AllViewerExceptHostHeader`, which should forward it; if it does not, switch `/api/*` to a custom cache policy that includes `Authorization` in the cache key (CloudFront then always forwards it).
+
+4. **Upload an image through the presigned PUT.** In the app, create an auction and attach an image; it must succeed cross-origin from the CloudFront hostname. To test by hand, take the access token from the login response (`data.accessToken` inside the `BaseResponse` wrapper):
+
+   ```bash
+   TOKEN="<data.accessToken from the login response>"   # same token as check 3
    curl -s -H "Authorization: Bearer $TOKEN" \
      "$CF_URL/api/v1/media/presigned-url?fileName=test.png&contentType=image/png"
    ```
@@ -372,6 +381,8 @@ aws ecs update-service --cluster bidnow-demo --service api-gateway --force-new-d
 Also make sure you open the CloudFront URL, not the ALB address.
 
 **The WebSocket drops after about 60 seconds.** CloudFront closes an origin connection that carries no data for 60 seconds (its origin read timeout; the ALB idle timeout is 120 seconds). The web app and media-service send STOMP heartbeats every 10 seconds to prevent it. If it still drops, the running images are older than the heartbeat change: rebuild and push the images (section 4.3), then force a new deployment of `frontend` and `media-service`.
+
+**The frontend target stays unhealthy or the home page is empty.** The ALB checks the frontend at `/healthz` (expects 200-399), a route that answers `ok` without calling the backend, and the gateway at `/actuator/health` (expects 200). An unhealthy frontend target therefore means the container itself is not serving: check the `/ecs/frontend` log group. Server-rendered pages (`/`, `/auctions`, `/auctions/<id>`) fetch from the gateway inside the cluster through `API_INTERNAL_URL` (`http://api-gateway:8080`, set by Terraform); while the gateway is starting or down they render with empty lists instead of failing. If they stay empty once `api-gateway` is running, check that the frontend task has `API_INTERNAL_URL` and that the images include the change that reads it.
 
 **Tasks cannot pull images (`CannotPullContainerError`).** The tag does not exist in ECR or the task has no route to ECR; check the NAT gateway exists and the tag is present (section 4.3 verify step).
 

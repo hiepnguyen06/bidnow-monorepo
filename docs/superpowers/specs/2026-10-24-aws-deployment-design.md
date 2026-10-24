@@ -66,7 +66,7 @@ CloudFront  --- /uploads/*          -->  S3 media bucket (private, Origin Access
 - Sizing starting point: 0.5 vCPU / 1 GB per Java service (tune after first run). Target-tracking auto scaling on CPU, min 1, max 2 in demo mode. Deployment circuit breaker with rollback on.
 - Images live in **ECR**, one repository per service, with a lifecycle policy keeping the last few images.
 - Logs go to CloudWatch Logs, one log group per service, short retention.
-- Each task has its own **task role** (least privilege). `media-service` gets read/write on the media bucket only. A shared **execution role** pulls images and reads only the secrets its task needs.
+- Each task has its own **task role** (least privilege). `media-service` gets read/write on the media bucket only. A shared **execution role** pulls images and can read the seven Secrets Manager secrets of the stack (an accepted loosening: the role is shared by every task, so it cannot be narrowed per task).
 - Outbound traffic (SMTP on 587, ECR, CloudWatch) goes through the NAT gateway. An S3 gateway VPC endpoint avoids NAT charges for S3 traffic.
 
 ### Tier 3: data (isolated subnets, no route to the internet)
@@ -74,7 +74,7 @@ CloudFront  --- /uploads/*          -->  S3 media bucket (private, Origin Access
 - **ElastiCache Redis 7**, a single `cache.t4g.micro` node, no TLS (the services connect without it today).
 - **MSK Provisioned**, 2 brokers, `kafka.t3.small`, in the data subnets. TLS in transit, access restricted by security group, no client authentication. A custom MSK configuration enables topic auto-creation (the MSK default disables it).
 - **S3 media bucket**, private, reachable only through CloudFront (Origin Access Control) and by `media-service`. Browser uploads use the presigned PUT URLs that `media-service` already issues, so the bucket needs a CORS rule for the CloudFront origin.
-- **Secrets Manager** holds the database password, `JWT_SECRET`, the SMTP settings (`MAIL_HOST/PORT/USERNAME/PASSWORD/FROM`) and the origin-verify header value. Tasks receive them as ECS `secrets`, never as plain environment values.
+- **Secrets Manager** holds the database password, `JWT_SECRET`, and the SMTP settings (`MAIL_HOST/PORT/USERNAME/PASSWORD/FROM`). Tasks receive them as ECS `secrets`, never as plain environment values. The origin-verify header value is not stored in Secrets Manager: it is a Terraform `random_password` passed only to the ALB listener rules and the CloudFront origin.
 
 ### Network
 - One VPC, two AZs, three subnet tiers (public, private-app, private-data). Security groups are chained tier to tier: ALB to tasks, tasks to RDS/Redis/MSK on their ports only. One NAT gateway by default.
@@ -112,7 +112,7 @@ It is triggered manually (`workflow_dispatch`) and optionally on pushes to `main
 ## Application changes (small, config-level, listed so they are not a surprise)
 
 1. **Service discovery:** the gateway uses `lb://<service>` routes and Feign clients use Eureka names. Make the gateway route URIs and the Feign client URLs overridable by environment variables (defaulting to today's `lb://` and Eureka names), and set them to the Service Connect DNS names on AWS along with `EUREKA_CLIENT_ENABLED=false`. No Spring profile is needed. Behaviour and defaults for local development stay unchanged.
-2. **Frontend URLs:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL` and `NEXT_PUBLIC_CDN_URL` are baked in at build time, but the CloudFront hostname is random per apply. The web app should use same-origin relative paths (`/api`, `/ws-notifications`, `/uploads`) so one image works under any hostname. This needs small edits to `lib/apiClient.ts`, `services/auth.service.ts`, `lib/realtime/ws-url.ts` and the CDN lookup in `lib/image-utils.ts`.
+2. **Frontend URLs:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL` and `NEXT_PUBLIC_CDN_URL` are baked in at build time, but the CloudFront hostname is random per apply. The web app should use same-origin relative paths (`/api`, `/ws-notifications`, `/uploads`) so one image works under any hostname. This needs small edits to `lib/apiClient.ts`, `services/auth.service.ts`, `lib/realtime/ws-url.ts` and the CDN lookup in `lib/image-utils.ts`. Relative paths only work in the browser: Server Components run in Node, which cannot fetch a relative URL, so on the server the base URL comes from the runtime env `API_INTERNAL_URL=http://api-gateway:8080` (Service Connect), resolved by `lib/api-base.ts`. The ALB checks the frontend at `/healthz`, a route that does not call the backend.
 3. **Kafka TLS:** set `SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=SSL` through environment variables, with no code change expected. The builder should confirm the exact env variable name each service reads (`KAFKA_BOOTSTRAP_SERVERS` is used in the YAML, while compose sets `SPRING_KAFKA_BOOTSTRAP_SERVERS`).
 4. **Media URLs:** `media-service` gets `CDN_BASE_URL=https://<cloudfront-domain>` as a runtime environment value from Terraform. Objects are already stored under the key prefix `uploads/` (`MediaServiceImpl.buildS3Key`), so the `/uploads/*` behaviour maps straight onto S3 keys with no rewriting.
 
