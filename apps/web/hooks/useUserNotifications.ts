@@ -64,8 +64,8 @@ export function useUserNotifications(): void {
       reconnectDelay:    1_000,
       maxReconnectDelay: 30_000,
       reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
-      heartbeatIncoming: 0, // the broker has no heartbeats configured
-      heartbeatOutgoing: 0,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       beforeConnect: async (c) => {
         const token = await getFreshAccessToken()
         if (!token) {

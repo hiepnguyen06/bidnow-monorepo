@@ -56,8 +56,8 @@ export function useAuctionSocket(auctionId: string, onResync?: () => void): void
       reconnectDelay:    1_000,
       maxReconnectDelay: 30_000,
       reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
-      heartbeatIncoming: 0, // the broker has no heartbeats configured (see roadmap risks)
-      heartbeatOutgoing: 0,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       beforeConnect: async (c) => {
         const token = userId ? await getFreshAccessToken() : null
         c.brokerURL = withAccessToken(endpoint, token)
