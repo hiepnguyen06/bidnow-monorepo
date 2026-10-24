@@ -164,6 +164,9 @@ resource "aws_ecs_service" "this" {
     }
   }
 
+  # The task role policy must exist before tasks start (count may be 0).
+  depends_on = [aws_iam_role_policy.task]
+
   lifecycle {
     # Autoscaling owns the running count.
     ignore_changes = [desired_count]

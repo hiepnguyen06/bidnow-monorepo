@@ -16,4 +16,10 @@ output "namespace_arn" {
 output "execution_role_arn" {
   description = "ARN of the shared task execution role."
   value       = aws_iam_role.execution.arn
+
+  # Consumers must not start tasks before the role has its permissions.
+  depends_on = [
+    aws_iam_role_policy_attachment.execution_managed,
+    aws_iam_role_policy.execution_secrets,
+  ]
 }
