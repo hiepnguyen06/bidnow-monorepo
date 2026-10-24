@@ -82,6 +82,25 @@ run "msk_replication_factor_two" {
   }
 }
 
+run "msk_internal_topics_fit_two_brokers" {
+  command = plan
+
+  assert {
+    condition     = strcontains(aws_msk_configuration.this.server_properties, "offsets.topic.replication.factor=2")
+    error_message = "Consumer offsets topic must use replication factor 2."
+  }
+
+  assert {
+    condition     = strcontains(aws_msk_configuration.this.server_properties, "transaction.state.log.replication.factor=2")
+    error_message = "Transaction state log must use replication factor 2."
+  }
+
+  assert {
+    condition     = strcontains(aws_msk_configuration.this.server_properties, "transaction.state.log.min.isr=1")
+    error_message = "Transaction state log min ISR must be 1."
+  }
+}
+
 run "msk_cluster_uses_configuration" {
   command = apply
 

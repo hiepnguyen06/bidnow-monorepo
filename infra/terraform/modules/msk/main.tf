@@ -32,6 +32,9 @@ resource "aws_msk_configuration" "this" {
     default.replication.factor=2
     min.insync.replicas=1
     num.partitions=3
+    offsets.topic.replication.factor=2
+    transaction.state.log.replication.factor=2
+    transaction.state.log.min.isr=1
   EOT
 }
 
