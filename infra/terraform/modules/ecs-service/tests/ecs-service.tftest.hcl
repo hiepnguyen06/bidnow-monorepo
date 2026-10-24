@@ -251,6 +251,28 @@ run "service_connect_alias_matches_name_and_port" {
   }
 }
 
+# TCP-mode Service Connect: an http appProtocol makes Envoy apply a 15 s per-request timeout and HTTP
+# semantics that can cut the raw WebSocket upgrade from api-gateway to media-service.
+run "port_mapping_has_no_http_app_protocol" {
+  command = plan
+
+  assert {
+    condition = alltrue([
+      for c in jsondecode(aws_ecs_task_definition.this.container_definitions) : alltrue([
+        for p in try(c.portMappings, []) : try(p.appProtocol, null) == null
+      ])
+    ])
+    error_message = "Port mappings must not set appProtocol (Service Connect stays in TCP mode)."
+  }
+
+  assert {
+    condition = one([
+      for c in jsondecode(aws_ecs_task_definition.this.container_definitions) : c if c.name == "bidding"
+    ]).portMappings == [{ name = "bidding", containerPort = 8083, protocol = "tcp" }]
+    error_message = "The main container keeps its named tcp port mapping for Service Connect."
+  }
+}
+
 run "load_balancer_block_only_when_target_group_given" {
   command = plan
 

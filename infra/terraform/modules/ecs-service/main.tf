@@ -53,7 +53,6 @@ locals {
           name          = var.name
           containerPort = var.port
           protocol      = "tcp"
-          appProtocol   = "http"
         },
       ]
       environment = [for k in sort(keys(var.env)) : { name = k, value = var.env[k] }]
