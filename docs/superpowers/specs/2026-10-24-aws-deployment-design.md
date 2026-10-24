@@ -117,14 +117,17 @@ It is triggered manually (`workflow_dispatch`) and optionally on pushes to `main
 4. **Media URLs:** `media-service` gets `CDN_BASE_URL=https://<cloudfront-domain>` as a runtime environment value from Terraform. Objects are already stored under the key prefix `uploads/` (`MediaServiceImpl.buildS3Key`), so the `/uploads/*` behaviour maps straight onto S3 keys with no rewriting.
 
 5. **WebSocket heartbeats:** every STOMP client sets `heartbeatIncoming/Outgoing: 0` and the broker in `WebSocketConfig` has no heartbeat, so an idle connection carries no traffic and CloudFront/ALB will drop it. Enable heartbeats (around 10s) on the three client hooks and on the server's simple broker (needs a task scheduler). Live bidding and notifications are treated as required for the demo, so this change is in scope (confirmed by the owner).
-6. **Notification links:** `media-service` builds absolute links in emails from `app.frontend.base-url`. Pass the CloudFront URL as `APP_FRONTEND_BASE_URL`.
-7. **Images:** with relative `/uploads/...` URLs, Next's image optimizer would try to fetch from its own container and miss the CloudFront route. Either serve media images unoptimized or build absolute URLs in the browser from `window.location`. The builder picks one.
+6. **Notification links:** `media-service` builds absolute links in emails from `app.frontend.base-url` and reads `${FRONTEND_BASE_URL}` in its YAML. Pass the CloudFront URL as both `FRONTEND_BASE_URL` and `APP_FRONTEND_BASE_URL`.
+7. **Images:** with relative `/uploads/...` URLs, Next's image optimizer would try to fetch from its own container and miss the CloudFront route. Built decision: media images are served unoptimized when `NEXT_IMAGE_UNOPTIMIZED=true`, which the Dockerfile build stage sets.
+8. **Gateway CORS (added during implementation):** the gateway allowed only `http://localhost:3000`. Behind CloudFront the gateway sees the ALB hostname as `Host` and the CloudFront hostname as `Origin`, so Spring treats requests as cross-origin and would reject logins, POSTs and the WebSocket handshake with 403. `allowedOrigins` now reads `${CORS_ALLOWED_ORIGINS:http://localhost:3000}` (comma-separated), and Terraform sets it to the CloudFront URL on `api-gateway`.
 
 ## Decisions made by the assistant (the owner has not explicitly confirmed these)
 
 - Fargate runs `x86_64` (GitHub runners build x86 images with no extra setup; Graviton is a later optimisation).
 - Images are tagged with the commit SHA and `latest`; `envs/demo` defaults `image_tag` to `latest`. First-run order is: apply `bootstrap`, push images once (by the workflow, or a documented local script), then apply `envs/demo`.
-- MSK configuration: `auto.create.topics.enable=true`, `default.replication.factor=2`, `min.insync.replicas=1`, `num.partitions=3`. The services declare no `NewTopic` beans, so topics come from auto-creation.
+- MSK configuration: `auto.create.topics.enable=true`, `default.replication.factor=2`, `min.insync.replicas=1`, `num.partitions=3`, plus `offsets.topic.replication.factor=2`, `transaction.state.log.replication.factor=2`, `transaction.state.log.min.isr=1` (Kafka's defaults of 3 cannot be met by two brokers). The services declare no `NewTopic` beans, so topics come from auto-creation.
+- `envs/demo` requires the AWS provider `>= 6.5` (the `aws_ecr_images` data source gives a clear "Push images first" plan failure); the reusable modules keep `>= 5.82, < 7`.
+- `ecs-service` takes two inputs beyond the plan's first list, `cluster_name` and `aws_region`, and `ecs-cluster`'s execution role reads every secret ARN passed in `secret_arns` (all seven).
 - Terraform has no dependency cycle: CloudFront depends on the ALB and S3 only (the origin-verify header is a `random_password`), ECS services depend on CloudFront for the public URL, and the S3 bucket policy and CORS rule are separate resources that depend on the distribution.
 - All eight tasks share one database user and the init containers use that same credential; the compose setup already works this way.
 - The OIDC deploy role trusts `repo:hiepnguyen06/bidnow-monorepo` on `refs/heads/main` and on `workflow_dispatch` runs only.
