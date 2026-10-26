@@ -22,10 +22,18 @@ resource "aws_vpc_security_group_ingress_rule" "from_allowed" {
   referenced_security_group_id = var.allowed_sg_ids[count.index]
 }
 
+locals {
+  # MSK deprecates old versions and then refuses to create clusters on them (3.6.0 is
+  # DEPRECATED and was rejected). List what is currently allowed with:
+  #   aws kafka list-kafka-versions --region ap-southeast-2
+  # 3.9.x is the ZooKeeper-mode line; "3.9.x.kraft" is the KRaft equivalent.
+  kafka_version = "3.9.x"
+}
+
 # The MSK default disables topic auto-creation; the services rely on it.
 resource "aws_msk_configuration" "this" {
   name           = "${var.name}-msk"
-  kafka_versions = ["3.6.0"]
+  kafka_versions = [local.kafka_version]
 
   server_properties = <<-EOT
     auto.create.topics.enable=true
@@ -40,7 +48,7 @@ resource "aws_msk_configuration" "this" {
 
 resource "aws_msk_cluster" "this" {
   cluster_name           = "${var.name}-msk"
-  kafka_version          = "3.6.0"
+  kafka_version          = local.kafka_version
   number_of_broker_nodes = 2
 
   broker_node_group_info {

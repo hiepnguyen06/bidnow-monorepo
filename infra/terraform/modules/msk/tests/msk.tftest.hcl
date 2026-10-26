@@ -101,6 +101,23 @@ run "msk_internal_topics_fit_two_brokers" {
   }
 }
 
+run "msk_uses_an_active_kafka_version" {
+  command = plan
+
+  # MSK refuses to create clusters on deprecated versions: 3.6.0 was rejected with
+  # "Standard instance types are not supported for Kafka version 3.6.0". The active
+  # versions below come from `aws kafka list-kafka-versions` (ap-southeast-2, 2026-10-26).
+  assert {
+    condition     = contains(["3.8.x", "3.8.x.kraft", "3.9.x", "3.9.x.kraft", "4.0.x.kraft", "4.1.x.kraft", "4.2.x.kraft"], aws_msk_cluster.this.kafka_version)
+    error_message = "The cluster must use a Kafka version that MSK still lets you create."
+  }
+
+  assert {
+    condition     = toset(aws_msk_configuration.this.kafka_versions) == toset([aws_msk_cluster.this.kafka_version])
+    error_message = "The MSK configuration must be for the same Kafka version as the cluster."
+  }
+}
+
 run "msk_cluster_uses_configuration" {
   command = apply
 
