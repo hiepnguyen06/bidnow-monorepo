@@ -31,8 +31,13 @@ locals {
       memory   = 512
       # Browser URLs are same-origin and baked into the image at build time. Server Components cannot
       # fetch a relative URL, so they call the gateway directly over Service Connect.
+      #
+      # HOSTNAME: Next.js binds to $HOSTNAME. Fargate sets it to the task's own hostname and that
+      # overrides the Dockerfile's `ENV HOSTNAME=0.0.0.0`, so without this the server did not accept
+      # the ALB's connections (every health check failed, CloudFront returned 502).
       env = {
         API_INTERNAL_URL = "http://api-gateway:8080"
+        HOSTNAME         = "0.0.0.0"
       }
       secrets = {}
     }
