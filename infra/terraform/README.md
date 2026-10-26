@@ -16,6 +16,8 @@ Typical flow: apply `bootstrap`, push images to ECR, `terraform init -backend-co
 
 The tests use mock providers only: no AWS credentials and no network access to AWS are needed.
 
+The configurations need Terraform >= 1.10, but the **tests need a newer Terraform**: they were written and run with **1.16.6**, and the `terraform-validate` workflow pins exactly that version. They use `state_key` in `run` blocks and boolean expressions that rely on short-circuit evaluation; Terraform 1.10 rejects the first and fails on the second.
+
 ```bash
 cd infra/terraform
 terraform fmt -check -recursive

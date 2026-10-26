@@ -44,7 +44,7 @@ run "every_forward_rule_requires_origin_header" {
       for r in [aws_lb_listener_rule.gateway, aws_lb_listener_rule.frontend] :
       length([
         for c in r.condition : c
-        if length(c.http_header) == 1 && one(c.http_header).http_header_name == "X-Origin-Verify" && one(c.http_header).values == toset(["test-origin-secret"])
+        if length(c.http_header) == 1 && anytrue([for h in c.http_header : h.http_header_name == "X-Origin-Verify" && h.values == toset(["test-origin-secret"])])
       ]) == 1
     ])
     error_message = "Every forward rule needs exactly one X-Origin-Verify header condition equal to the configured value."

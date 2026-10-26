@@ -57,13 +57,11 @@ run "generated_values_have_expected_shape" {
 run "db_password_has_no_rds_forbidden_chars" {
   command = plan
 
-  # RDS forbids / " @ and space. Either no specials at all, or a set free of them.
+  # RDS forbids / " @ and space. The password is generated without any special characters,
+  # which guarantees none of them can appear (the mocked provider cannot return a real result).
   assert {
-    condition = (
-      random_password.db.special == false ||
-      length(setintersection(toset(split("", random_password.db.override_special)), toset(["/", "\"", "@", " "]))) == 0
-    )
-    error_message = "DB password must not contain / \" @ or space."
+    condition     = random_password.db.special == false
+    error_message = "DB password must be generated without special characters (RDS forbids / \" @ and space)."
   }
 }
 
