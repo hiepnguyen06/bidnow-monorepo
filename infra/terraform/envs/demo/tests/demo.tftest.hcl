@@ -212,8 +212,8 @@ run "eight_services_defined" {
   }
 
   assert {
-    condition     = keys(local.services["frontend"].env) == ["API_INTERNAL_URL"] && length(local.services["frontend"].secrets) == 0
-    error_message = "The frontend image is built with same-origin URLs; its only runtime env is API_INTERNAL_URL and it has no secrets."
+    condition     = toset(keys(local.services["frontend"].env)) == toset(["API_INTERNAL_URL", "HOSTNAME"]) && length(local.services["frontend"].secrets) == 0
+    error_message = "The frontend image is built with same-origin URLs; its only runtime env is API_INTERNAL_URL and HOSTNAME, and it has no secrets."
   }
 
   assert {
@@ -398,6 +398,23 @@ run "frontend_has_internal_api_url" {
   assert {
     condition     = [for k, s in local.services : k if contains(keys(s.env), "API_INTERNAL_URL")] == ["frontend"]
     error_message = "Only the frontend gets API_INTERNAL_URL."
+  }
+}
+
+run "frontend_listens_on_all_interfaces" {
+  command = apply
+
+  # Fargate sets HOSTNAME to the task's own hostname and that wins over the Dockerfile's ENV, so
+  # Next.js (which binds to $HOSTNAME) stops accepting connections from the ALB: every health
+  # check fails and CloudFront shows 502. The task definition itself has to set it.
+  assert {
+    condition     = local.services["frontend"].env["HOSTNAME"] == "0.0.0.0"
+    error_message = "The frontend task must set HOSTNAME=0.0.0.0 so Next.js listens on every interface."
+  }
+
+  assert {
+    condition     = [for k, s in local.services : k if contains(keys(s.env), "HOSTNAME")] == ["frontend"]
+    error_message = "Only the frontend sets HOSTNAME (the Spring services already listen on all interfaces)."
   }
 }
 
