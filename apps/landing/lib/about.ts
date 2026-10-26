@@ -1,72 +1,33 @@
-/** Static content for the About page (`/about`): architecture facts, tech stack and the team. */
+/** Static content for the About page (`/about`): project status, tech stack and the team. */
 
-export interface Principle {
-  n:     string
+export interface StatusGroup {
   title: string
-  body:  string
+  items: readonly string[]
 }
 
-export const PRINCIPLES: readonly Principle[] = [
-  {
-    n: '01',
-    title: 'A database per service',
-    body: 'Each service owns its PostgreSQL database, versioned with Liquibase. Nothing queries across them, so a service can change its schema without asking anyone.',
-  },
-  {
-    n: '02',
-    title: 'One door in',
-    body: 'The API gateway is the only component that reads the JWT. It forwards X-User-Id and X-User-Roles, and every downstream service trusts those headers.',
-  },
-  {
-    n: '03',
-    title: 'Events for what can wait',
-    body: 'Bids, auction lifecycle changes, deposits and audit entries travel as Kafka events, so a slow consumer can lag without holding up the bidder.',
-  },
-  {
-    n: '04',
-    title: 'Live by default',
-    body: 'Auction pages subscribe to a STOMP topic, so prices, countdowns and anti-sniping extensions are pushed to the browser instead of polled.',
-  },
-]
-
-export interface Note {
-  title: string
-  body:  string
+export const BUILT: StatusGroup = {
+  title: 'Built',
+  items: [
+    'Registration with email OTP, login, profiles',
+    'Listings with images, categories and Buy It Now',
+    'Live bidding with anti-sniping extensions',
+    'Wallet, deposit locks, refunds and the 48-hour payment window',
+    'In-app and email notifications with an inbox',
+    'Admin tools, audit log, distributed tracing',
+    'AWS deployment in Terraform with a GitHub Actions pipeline',
+  ],
 }
 
-export const SERVICE_NOTES: readonly Note[] = [
-  {
-    title: 'Request path',
-    body: 'Browser to gateway to service. The gateway validates the token, adds the identity headers and resolves lb:// routes through Eureka. A shared common module supplies the response wrapper, error handling and header filter.',
-  },
-  {
-    title: 'Synchronous calls',
-    body: 'OpenFeign is used when a reply is needed inline: identity creates a profile in user, and bidding reads auctions and talks to wallet. Internal endpoints live under /internal and are never routed by the gateway.',
-  },
-  {
-    title: 'Events and audit',
-    body: 'Kafka carries bid, auction, deposit and payment events. An @Audit aspect publishes before and after snapshots to the audit-events topic, which media-service persists as the audit log.',
-  },
-]
+export const NOT_BUILT: StatusGroup = {
+  title: 'Not built yet',
+  items: [
+    'Auto-bidding with a maximum bid (phase 2)',
+    'An external payment gateway, Stripe or VNPay',
+    'Session affinity for the WebSocket fallback when media-service runs more than one instance',
+  ],
+}
 
-export const AWS_NOTES: readonly Note[] = [
-  {
-    title: 'Edge',
-    body: 'CloudFront terminates TLS with an ACM certificate, filters with WAF and caches static files. Uploaded images already flow through a CDN base URL, backed by S3.',
-  },
-  {
-    title: 'Load balancing',
-    body: 'One internet-facing ALB in the public subnets. Path rules send / to the Next.js target group and /api and /ws to the gateway. Health checks drive instance replacement.',
-  },
-  {
-    title: 'Compute',
-    body: 'EC2 instances in private subnets run the Docker images built by CI. To start, each application instance runs the full stack; services can move to their own groups as load demands.',
-  },
-  {
-    title: 'Data',
-    body: 'RDS PostgreSQL (Multi-AZ), ElastiCache for Redis and Amazon MSK replace the local containers. Instances use IAM roles, so no access keys are stored.',
-  },
-]
+export const OUT_OF_SCOPE = 'Out of scope for now: shipping, disputes, seller analytics and multiple currencies.'
 
 export interface StackItem {
   name: string
@@ -111,7 +72,7 @@ export const STACK: readonly StackGroup[] = [
     title: 'Data and messaging',
     items: [
       { name: 'PostgreSQL 15+',        role: 'One database per service' },
-      { name: 'Apache Kafka 3.7',      role: 'Event bus' },
+      { name: 'Apache Kafka',          role: 'Event bus' },
       { name: 'Redis 7',               role: 'Cache, alert batching' },
       { name: 'STOMP broker',          role: 'Kafka events to browsers' },
       { name: 'Amazon S3, CloudFront', role: 'Media uploads, CDN' },
@@ -123,8 +84,8 @@ export const STACK: readonly StackGroup[] = [
       { name: 'JUnit, Mockito',        role: 'Unit tests' },
       { name: 'Cucumber',              role: 'BDD scenarios' },
       { name: 'JaCoCo',                role: 'Coverage' },
-      { name: 'GitHub Actions',        role: 'CI, security, image builds' },
-      { name: 'Dependabot',            role: 'Dependency updates' },
+      { name: 'GitHub Actions',        role: 'CI, security, deploys' },
+      { name: 'Terraform',             role: 'AWS infrastructure' },
       { name: 'Docker, Maven',         role: 'Images, multi-module build' },
     ],
   },

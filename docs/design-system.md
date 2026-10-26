@@ -717,17 +717,24 @@ Concept: "The clock is the auctioneer." The page shows real-time bidding instead
 - The old stats strip (50K+ users, $2.5M+, 4.8 rating), "Featured Picks" grid and "Why Trust BidNow?" cards were removed.
 - **Libraries:** `three`, `@react-three/fiber`, `@react-three/drei`, `motion`, `@number-flow/react`.
 
-### Showcase page (`apps/landing`, served at `/`)
+### Showcase site (`apps/landing`)
 
-A technical showcase, not a company story: how BidNow is built and where it will run. It lives in the static `apps/landing` site (moved out of the web app, whose `/about` now redirects to it). Server component; copy and lists live in `apps/landing/lib/about.ts` (covered by `about.test.ts`). Sections, top to bottom:
+A static site (`output: 'export'`, deployed to GitHub Pages) that shows both the product and how it is built. The web app's `/about` redirects to it. Every fact on it is taken from `docs/` or the code; unbuilt work (auto-bidding, the payment gateway) is labelled as such, and the requirement numbers are labelled as targets.
 
-- **Hero:** always dark (`dark` class), eyebrow, headline, two CTAs and a four-fact strip (modules, DB ownership, service-to-service, live updates).
-- **Design principles:** four numbered cards (database per service, one door in, events for what can wait, live by default).
-- **Microservices (`#architecture`):** `ServiceMapDiagram` — gateway, Eureka, the six domain services with ports and data stores, three Feign calls and the Kafka bus — followed by three notes (request path, synchronous calls, events and audit). Ports, topics and Feign links mirror `services/CLAUDE.md` and the services' `feign/` and `kafka/` packages; update the diagram when they change.
-- **Target deployment on AWS (`#aws`):** always dark. `AwsArchitectureDiagram` shows CloudFront and S3 at the edge, one ALB with path rules, two Auto Scaling Groups (Next.js; gateway plus services) across two AZs, and RDS PostgreSQL, ElastiCache Redis and MSK in the data tier. It is labelled a *target*: the CD workflow (`.github/workflows/cd-deploy.yml`) is still disabled.
-- **Tech stack:** four grouped lists (frontend, backend, data and messaging, quality and delivery) on a tinted band.
-- **Developers:** names and GitHub links only.
-- **Diagrams** (`components/about/`) are inline SVG drawn from `diagram-parts.tsx` (`Node`, `Arrow`, `Label`). Colours are design tokens, so they follow the theme. The SVG scales with its container down to 1000px wide, then the frame scrolls sideways. Each has a `<title>` and `<desc>` for screen readers.
+**Shell.** `app/layout.tsx` renders a skip link, `SiteHeader` (logo, `SiteNav`, Source link, `ThemeToggle`) and `SiteFooter` around every page. `SiteNav` is a client component that marks the current page with `aria-current`; below `md` it moves to its own horizontally scrolling row. Page links live in `NAV_LINKS` (`lib/site.ts`). Each page opens with `PageHero`, which is always dark (`dark` class on `--color-brand-900`).
+
+**Pages.**
+
+- **Home (`/`):** hero with an illustrated live-auction card (`home/AuctionCardIllustration`, values marked as examples) and a four-fact strip; three feature highlights; the five auction steps; a dark "one bid, from click to every screen" strip; three engineering teasers.
+- **Features (`/features`):** an on-page chip nav, then seven `FeatureSection`s (live bidding, anti-sniping, Buy It Now, wallet, notifications, selling, accounts and admin) and a "Not built yet" band.
+- **How it works (`/how-it-works`):** an eight-step timeline and `AntiSnipeSimulator`, a client component over the pure model in `lib/anti-snipe.ts` (covered by `anti-snipe.test.ts`). It uses the real rule (under 120 s left adds 300 s) with example prices.
+- **Architecture (`/architecture`):** fact strip, a four-layer system map, the life of a bid in eight steps, the Kafka topic table, the two STOMP channels, and the AWS section with `AwsArchitectureDiagram` (follows the theme switch) and three tier cards.
+- **Engineering (`/engineering`):** eight problem/approach notes, each linking to its design doc, and the non-functional targets.
+- **About (`/about`):** built and not-built lists, the tech stack and the developers. Copy lives in `lib/about.ts` (covered by `about.test.ts`).
+
+**Building blocks.** `Section` / `SectionHeading` (`components/home/Section.tsx`), `Card`, `Kicker` and `DotList` (`components/Card.tsx`), `FactList`, `FeatureSection`, and `LinkButton` / `MoreLink` (internal paths go through `next/link` so the GitHub Pages base path is applied).
+
+**Diagrams** (`components/about/`) are inline SVG drawn from `diagram-parts.tsx` (`Node`, `Arrow`, `Label`). Colours are design tokens, so they follow the theme. The SVG scales with its container down to 1000px wide, then the frame scrolls sideways. Each has a `<title>` and `<desc>` for screen readers. Update `AwsArchitectureDiagram` when `infra/terraform` changes.
 
 ---
 
