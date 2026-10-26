@@ -103,10 +103,20 @@ Run everything from the repository root unless stated otherwise.
 
 `budget_email` is required; use an address you read.
 
+GitHub gives some repositories an **immutable subject claim**: the `sub` in the OIDC token is then `repo:<owner>@<owner-id>/<repo>@<repo-id>:ref:refs/heads/main` (with numeric ids) instead of `repo:<owner>/<repo>:ref:refs/heads/main`. The deploy role trusts exactly one `sub`, so it has to be the right form. Look up the prefix for your repository (read-only) and pass it as `github_sub_claim_prefix`:
+
+```bash
+gh api repos/hiepnguyen06/bidnow-monorepo/actions/oidc/customization/sub
+# {"use_default":true,"use_immutable_subject":true,"sub_claim_prefix":"repo:hiepnguyen06@<owner-id>/bidnow-monorepo@<repo-id>"}
+```
+
+If `use_immutable_subject` is `false`, skip the extra variable below (the default `repo:<owner>/<repo>` is then correct).
+
 ```bash
 cd infra/terraform/bootstrap
 terraform init
-terraform apply -var "budget_email=you@example.com"
+SUB_PREFIX=$(gh api repos/hiepnguyen06/bidnow-monorepo/actions/oidc/customization/sub --jq .sub_claim_prefix)
+terraform apply -var "budget_email=you@example.com" -var "github_sub_claim_prefix=$SUB_PREFIX"
 ```
 
 Bootstrap uses a local backend (its state file stays in this directory; do not delete it). Note the outputs:
@@ -359,7 +369,7 @@ Expected: nothing from this stack (the `list-buckets` query prints `[]`). The st
 
 **`ClusterNotFoundException` / `ClusterNotFound`** from `aws ecs ...` commands: the stack is not applied (or was destroyed), or you are in the wrong region or profile. Check `aws sts get-caller-identity` and `--region ap-southeast-2`.
 
-**`Not authorized to perform sts:AssumeRoleWithWebIdentity` in the workflow.** The role trust only accepts `repo:<owner>/<repo>:ref:refs/heads/main`. The workflow must run from `main` (`gh workflow run "Deploy to AWS" --ref main`), the repository must match `github_repository` in `bootstrap`, and no job may declare `environment:` (that changes the OIDC subject). Runs from the feature branch or a pull request cannot assume the role; use the manual push (section 4.3, Option B) instead.
+**`Not authorized to perform sts:AssumeRoleWithWebIdentity` in the workflow.** The most common cause is a `sub` claim mismatch: if the repository uses GitHub's immutable subject claim, the token's `sub` is `repo:<owner>@<owner-id>/<repo>@<repo-id>:ref:refs/heads/main`, not `repo:<owner>/<repo>:ref:refs/heads/main`. Check with `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` (`use_immutable_subject: true`), then re-apply `bootstrap` with `-var "github_sub_claim_prefix=<sub_claim_prefix from that response>"` (section 4.1) and re-run the failed jobs with `gh run rerun <run-id> --failed`. Otherwise the role trust only accepts one main-ref `sub`. The workflow must run from `main` (`gh workflow run "Deploy to AWS" --ref main`), the repository must match `github_repository` in `bootstrap`, and no job may declare `environment:` (that changes the OIDC subject). Runs from the feature branch or a pull request cannot assume the role; use the manual push (section 4.3, Option B) instead.
 
 **A service keeps restarting and the `db-init` container fails.** Each database-backed task runs an idempotent `db-init` container that creates its database on RDS before the service starts. Read its logs:
 
