@@ -14,7 +14,7 @@
 ### Database
 
 - **Primary Database:** PostgreSQL 15+ (Individual database per microservice)
-- **Caching:** Redis (Global cache for sessions and real-time bid leaderboards; also media-service outbid/new-bid batching windows)
+- **Caching:** Redis (bidding-service: cached auction bid context, deposit-lock flags and bidder name summaries; auction-service: category caches; media-service: outbid/new-bid batching windows)
 
 ### Frontend
 

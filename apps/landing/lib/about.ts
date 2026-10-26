@@ -112,7 +112,7 @@ export const STACK: readonly StackGroup[] = [
     items: [
       { name: 'PostgreSQL 15+',        role: 'One database per service' },
       { name: 'Apache Kafka 3.7',      role: 'Event bus' },
-      { name: 'Redis 7',               role: 'Cache, bid leaderboards' },
+      { name: 'Redis 7',               role: 'Cache, alert batching' },
       { name: 'STOMP broker',          role: 'Kafka events to browsers' },
       { name: 'Amazon S3, CloudFront', role: 'Media uploads, CDN' },
     ],

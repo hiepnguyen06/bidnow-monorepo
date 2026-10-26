@@ -80,7 +80,7 @@ export function AwsArchitectureDiagram() {
 
       {/* tier 3 */}
       <Node x={944} y={132} w={176} h={88} variant="data" title="RDS for PostgreSQL" lines={['Multi-AZ · one database', 'per service']} />
-      <Node x={944} y={264} w={176} h={88} variant="data" title="ElastiCache for Redis" lines={['Cache and bid', 'leaderboards']} />
+      <Node x={944} y={264} w={176} h={88} variant="data" title="ElastiCache for Redis" lines={['Bid context cache,', 'alert batching']} />
       <Node x={944} y={396} w={176} h={88} variant="data" title="Amazon MSK" lines={['Managed Kafka event bus']} />
 
       {/* supporting services */}
