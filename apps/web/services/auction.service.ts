@@ -21,6 +21,19 @@ export interface GetAuctionsParams {
   featured?: boolean
 }
 
+/**
+ * Uncached GET for the public loaders that Server Components call. A network error (gateway cold
+ * or down) yields null, which callers treat like a non-ok response, so the page renders empty
+ * instead of failing with a 500.
+ */
+async function publicFetch(url: string): Promise<Response | null> {
+  try {
+    return await apiFetch(url, { cache: 'no-store' })
+  } catch {
+    return null
+  }
+}
+
 export const auctionService = {
   async getCategories(): Promise<ApiResponse<AuctionCategoryResponse[]>> {
     const response = await apiFetch('/api/v1/categories')
@@ -128,8 +141,8 @@ export const auctionService = {
     if (params.sortBy)                 query.set('sortBy', params.sortBy)
     query.set('page', String(params.page ?? 0))
     query.set('size', String(params.size ?? 20))
-    const response = await apiFetch(`/api/v1/auctions/public?${query}`, { cache: 'no-store' })
-    if (!response.ok) return { items: [], total: 0, totalPages: 0, page: 0 }
+    const response = await publicFetch(`/api/v1/auctions/public?${query}`)
+    if (!response?.ok) return { items: [], total: 0, totalPages: 0, page: 0 }
     const body: ApiResponse<PageResponse<AuctionBrowseItemResponse>> = await response.json()
     return {
       items:      body.data.data.map(mapAuctionBrowseItem),
@@ -140,15 +153,15 @@ export const auctionService = {
   },
 
   async getCategoryCounts(): Promise<CategoryCount[]> {
-    const response = await apiFetch('/api/v1/auctions/public/category-counts', { cache: 'no-store' })
-    if (!response.ok) return []
+    const response = await publicFetch('/api/v1/auctions/public/category-counts')
+    if (!response?.ok) return []
     const body: ApiResponse<CategoryCountResponse[]> = await response.json()
     return body.data.map(mapCategoryCount)
   },
 
   async getAuctionById(id: string): Promise<AuctionDetail | null> {
-    const response = await apiFetch(`/api/v1/auctions/public/${id}`, { cache: 'no-store' })
-    if (!response.ok) return null
+    const response = await publicFetch(`/api/v1/auctions/public/${id}`)
+    if (!response?.ok) return null
     const body: ApiResponse<AuctionDetailResponse> = await response.json()
     return mapAuctionDetailResponse(body.data)
   },

@@ -48,6 +48,7 @@ export function useLiveLot(lot: AuctionBrowseItem | null): LiveLot | null {
     const endpoint = resolveWsEndpoint({
       wsUrl:  process.env.NEXT_PUBLIC_WS_URL,
       apiUrl: process.env.NEXT_PUBLIC_API_URL,
+      origin: window.location.origin,
     })
     try {
       new URL(endpoint)
@@ -82,8 +83,8 @@ export function useLiveLot(lot: AuctionBrowseItem | null): LiveLot | null {
       reconnectDelay:    1_000,
       maxReconnectDelay: 30_000,
       reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
-      heartbeatIncoming: 0, // the broker has no heartbeats configured
-      heartbeatOutgoing: 0,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       onConnect: () => {
         client.subscribe(`/topic/auctions/${lotId}`, (message: IMessage) => {
           const parsed = parseRealtimeMessage(message.body)

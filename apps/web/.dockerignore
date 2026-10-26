@@ -1,0 +1,7 @@
+# The image installs and builds on Linux; host artefacts and local env files stay out of the context.
+node_modules
+.next
+.env*
+.git
+coverage
+*.log

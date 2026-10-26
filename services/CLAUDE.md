@@ -23,7 +23,7 @@ mvn test -pl identity-service -Dtest=AuthServiceImplTest
 docker compose up -d
 ```
 
-**Startup order**: `discovery-service` → `api-gateway` → any other service. All services register with Eureka on start.
+**Startup order**: `discovery-service` → `api-gateway` → any other service. All services register with Eureka on start. On AWS, Eureka is disabled (`EUREKA_CLIENT_ENABLED=false`, no `discovery-service`) and the `*_SERVICE_URL` overrides point at ECS Service Connect DNS names instead; see [docs/deployment-aws.md](../docs/deployment-aws.md).
 
 ## Required Environment Variables
 
@@ -33,7 +33,11 @@ Each service reads these from the environment (no `.env` file in repo):
 |-------------------------------------------------------------------------------------|----------------------------------------------------------------------|
 | `JWT_SECRET`                                                                        | api-gateway, identity-service                                        |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`                                              | identity-service, user-service, media-service (and others with a DB) |
+| `CORS_ALLOWED_ORIGINS`                                                              | api-gateway (default: `http://localhost:3000`; comma-separated list) |
 | `KAFKA_BOOTSTRAP_SERVERS`                                                           | all services (default: `localhost:9092`)                             |
+| `EUREKA_CLIENT_ENABLED`                                                             | all services (default: `true`; set `false` on AWS, no Eureka)       |
+| `IDENTITY_SERVICE_URL`, `USER_SERVICE_URL`, `AUCTION_SERVICE_URL`, `BIDDING_SERVICE_URL`, `WALLET_SERVICE_URL`, `MEDIA_SERVICE_URL` | api-gateway routes and Feign clients (default unset: Eureka `lb://`) |
+| `FRONTEND_BASE_URL` / `APP_FRONTEND_BASE_URL`                                       | media-service (base URL for links in emails)                         |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`             | media-service                                                        |
 | `AWS_REGION`, `AWS_BUCKET_NAME`, `CDN_BASE_URL`                                     | media-service (S3 uploads; images served via CloudFront)             |
 | `AWS_PROFILE` or `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` (local only)          | media-service (on AWS the task/pod role is used; no keys)            |

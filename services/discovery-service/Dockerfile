@@ -2,18 +2,9 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy the root pom and common module pom to cache dependencies
-COPY pom.xml .
-COPY common/pom.xml common/
-COPY discovery-service/pom.xml discovery-service/
-
-# Install common module and download discovery-service dependencies
-RUN mvn install -pl common -am -DskipTests
-
-# Copy source code and build the service
-COPY common/src common/src
-COPY discovery-service/src discovery-service/src
-RUN mvn package -pl discovery-service -DskipTests
+# The whole reactor: the root pom lists every module, and services build against common (most also against bdd-support).
+COPY . .
+RUN mvn -B -ntp -pl discovery-service -am package -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine

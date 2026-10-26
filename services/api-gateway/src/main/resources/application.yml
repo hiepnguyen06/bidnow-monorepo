@@ -20,38 +20,37 @@ spring:
           enabled: false
       routes:
         - id: identity-service
-          uri: lb://identity-service
+          uri: ${IDENTITY_SERVICE_URL:lb://identity-service}
           predicates:
             - Path=/api/v1/auth/**, /api/v1/admin/users/**
         - id: auction-service
-          uri: lb://auction-service
+          uri: ${AUCTION_SERVICE_URL:lb://auction-service}
           predicates:
             - Path=/api/v1/auctions/**, /api/v1/categories/**, /api/v1/admin/auctions/**
         - id: user-service
-          uri: lb://user-service
+          uri: ${USER_SERVICE_URL:lb://user-service}
           predicates:
             - Path=/api/v1/users/**, /api/v1/admin/profiles/**
         - id: bidding-service
-          uri: lb://bidding-service
+          uri: ${BIDDING_SERVICE_URL:lb://bidding-service}
           predicates:
             - Path=/api/v1/bids/**
         - id: wallet-service
-          uri: lb://wallet-service
+          uri: ${WALLET_SERVICE_URL:lb://wallet-service}
           predicates:
             - Path=/api/v1/wallets/**, /api/v1/admin/wallets/**
         - id: media-service
-          uri: lb://media-service
+          uri: ${MEDIA_SERVICE_URL:lb://media-service}
           predicates:
             - Path=/api/v1/media/**, /api/v1/admin/templates/**, /api/v1/admin/email-logs/**, /api/v1/admin/audit-logs, /api/v1/notifications/**
         - id: media-websocket
-          uri: lb://media-service
+          uri: ${MEDIA_SERVICE_URL:lb://media-service}
           predicates:
             - Path=/ws-notifications/**
       globalcors:
         cors-configurations:
           "[/**]":
-            allowedOrigins:
-              - "http://localhost:3000"
+            allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
             allowedMethods:
               - GET
               - POST

@@ -1,7 +1,6 @@
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services/auth.service";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { apiBaseUrl } from "@/lib/api-base";
 
 export const TOKEN_REFRESH_BUFFER_MS = 60_000;
 
@@ -91,7 +90,7 @@ function doFetch(url: string, options: RequestInit): Promise<Response> {
   ) {
     headers.set("Content-Type", "application/json");
   }
-  return fetch(`${API_URL}${url}`, { ...options, headers });
+  return fetch(`${apiBaseUrl()}${url}`, { ...options, headers });
 }
 
 function forceLogout(): void {

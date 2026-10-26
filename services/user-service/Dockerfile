@@ -2,15 +2,9 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-COPY pom.xml .
-COPY common/pom.xml common/
-COPY user-service/pom.xml user-service/
-
-RUN mvn install -pl common -am -DskipTests
-
-COPY common/src common/src
-COPY user-service/src user-service/src
-RUN mvn package -pl user-service -DskipTests
+# The whole reactor: the root pom lists every module, and services build against common (most also against bdd-support).
+COPY . .
+RUN mvn -B -ntp -pl user-service -am package -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine

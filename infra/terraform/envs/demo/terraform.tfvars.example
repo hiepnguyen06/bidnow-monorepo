@@ -1,0 +1,32 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Never commit real values.
+
+# AWS CLI profile to use; omit to use the default credential chain.
+aws_profile = "bidnow"
+
+# false: 1 NAT gateway, single-AZ RDS, 1 task per service (cheapest).
+# true:  2 NAT gateways, Multi-AZ RDS, 2 tasks per service.
+multi_az = false
+
+# Tag pushed by the Deploy workflow (commit SHA or latest). Every repository must contain it.
+image_tag = "latest"
+
+# From the bootstrap stack: terraform -chdir=../../bootstrap output ecr_repository_urls
+ecr_repository_urls = {
+  "frontend"         = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/frontend"
+  "api-gateway"      = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/api-gateway"
+  "identity-service" = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/identity-service"
+  "user-service"     = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/user-service"
+  "auction-service"  = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/auction-service"
+  "bidding-service"  = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/bidding-service"
+  "wallet-service"   = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/wallet-service"
+  "media-service"    = "<account>.dkr.ecr.ap-southeast-2.amazonaws.com/media-service"
+}
+
+# SMTP settings, copied from your local .env. Stored in Secrets Manager, injected as ECS secrets.
+mail = {
+  host     = "<smtp-host>"
+  port     = "587"
+  username = "<smtp-username>"
+  password = "<smtp-password>"
+  from     = "<from-address>"
+}

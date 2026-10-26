@@ -49,6 +49,7 @@ export function useUserNotifications(): void {
     const endpoint = resolveWsEndpoint({
       wsUrl:  process.env.NEXT_PUBLIC_WS_URL,
       apiUrl: process.env.NEXT_PUBLIC_API_URL,
+      origin: window.location.origin,
     })
 
     const onMessage = (message: IMessage) => {
@@ -63,8 +64,8 @@ export function useUserNotifications(): void {
       reconnectDelay:    1_000,
       maxReconnectDelay: 30_000,
       reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
-      heartbeatIncoming: 0, // the broker has no heartbeats configured
-      heartbeatOutgoing: 0,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       beforeConnect: async (c) => {
         const token = await getFreshAccessToken()
         if (!token) {

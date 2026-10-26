@@ -1,25 +1,183 @@
-name: CD Deploy
+# Deploy to AWS: build images, push them to ECR, and roll the ECS services when the demo stack is up.
+#
+# Authentication is GitHub OIDC only (no stored AWS keys). Configure these repository VARIABLES
+# (Settings > Secrets and variables > Actions > Variables; they are not secrets):
+#   AWS_DEPLOY_ROLE_ARN  IAM role to assume; Terraform output `github_deploy_role_arn` of infra/terraform/bootstrap
+#   AWS_REGION           AWS region of the stack, e.g. ap-southeast-2
+#   LANDING_URL          GitHub Pages URL of the landing site, baked into the frontend image (may be empty)
+#
+# IMPORTANT: do NOT add an `environment:` key to any job. The IAM trust policy only matches the
+# plain branch subject `repo:<owner>/<repo>:ref:refs/heads/main`; an environment changes the OIDC
+# subject to `...:environment:<name>` and the role could no longer be assumed.
+name: Deploy to AWS
 
 on:
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Services to build and roll: 'all' or a comma-separated list (frontend, api-gateway, identity-service, user-service, auction-service, bidding-service, wallet-service, media-service)"
+        required: false
+        default: all
+        type: string
   push:
     branches: [main]
+    paths:
+      - "services/**"
+      - "apps/web/**"
+      - ".github/workflows/cd-deploy.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+env:
+  ECS_CLUSTER: bidnow-demo
 
 jobs:
-  deploy:
-    name: Deploy to Production
-    if: false  # Remove this line when deployment infrastructure is ready
+  prepare:
+    name: Prepare service matrix
     runs-on: ubuntu-latest
-    environment: production
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      services: ${{ steps.matrix.outputs.services }}
+    steps:
+      - name: Compute services to build
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED: ${{ github.event.inputs.services }}
+        run: |
+          set -euo pipefail
+          # Single source of truth for the deployable services.
+          ALLOWED="frontend api-gateway identity-service user-service auction-service bidding-service wallet-service media-service"
+
+          requested="$(echo "${REQUESTED:-all}" | tr -d '[:space:]')"
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] || [ -z "$requested" ] || [ "$requested" = "all" ]; then
+            selected="$ALLOWED"
+          else
+            selected=""
+            IFS=',' read -r -a names <<< "$requested"
+            for name in "${names[@]}"; do
+              [ -z "$name" ] && continue
+              case " $ALLOWED " in
+                *" $name "*) ;;
+                *) echo "::error::Unknown service '$name'. Allowed: $ALLOWED"; exit 1 ;;
+              esac
+              case " $selected " in
+                *" $name "*) ;;
+                *) selected="$selected $name" ;;
+              esac
+            done
+            selected="$(echo $selected)"
+            if [ -z "$selected" ]; then
+              echo "::error::No services selected."
+              exit 1
+            fi
+          fi
+
+          matrix="$(for s in $selected; do
+            if [ "$s" = "frontend" ]; then
+              jq -cn --arg n "$s" '{name:$n, context:"apps/web", file:"apps/web/Dockerfile"}'
+            else
+              jq -cn --arg n "$s" '{name:$n, context:"services", file:("services/" + $n + "/Dockerfile")}'
+            fi
+          done | jq -cs '{include: .}')"
+
+          echo "Selected: $selected"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "services=$selected" >> "$GITHUB_OUTPUT"
+
+  build-push:
+    name: Build and push - ${{ matrix.name }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            cd /opt/bidnow
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker image prune -f
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            ${{ matrix.name == 'frontend' && format('NEXT_PUBLIC_LANDING_URL={0}', vars.LANDING_URL) || '' }}
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ matrix.name }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ matrix.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  roll-services:
+    name: Roll ECS services
+    needs: [prepare, build-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll services when the cluster is up
+        env:
+          SERVICES: ${{ needs.prepare.outputs.services }}
+        run: |
+          set -uo pipefail
+
+          # The demo stack is often torn down: a missing/inactive cluster (or a role that cannot
+          # see it) is not a failure, images are already pushed.
+          active="$(aws ecs describe-clusters --clusters "$ECS_CLUSTER" \
+            --query "clusters[?status=='ACTIVE'].clusterName" --output text 2>/dev/null || true)"
+          if [ -z "$active" ] || [ "$active" = "None" ]; then
+            echo "::notice::ECS cluster '$ECS_CLUSTER' is not ACTIVE (stack torn down?). Images were pushed to ECR; skipping service rollout."
+            exit 0
+          fi
+
+          rolled=""
+          for svc in $SERVICES; do
+            found="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$svc" \
+              --query "services[?status=='ACTIVE'].serviceName" --output text 2>/dev/null || true)"
+            if [ -z "$found" ] || [ "$found" = "None" ]; then
+              echo "::warning::Service '$svc' not found in cluster '$ECS_CLUSTER'; skipping."
+              continue
+            fi
+            echo "Forcing new deployment of $svc"
+            if ! aws ecs update-service --cluster "$ECS_CLUSTER" --service "$svc" \
+                 --force-new-deployment --output text --query "service.serviceName"; then
+              echo "::error::update-service failed for $svc"
+              exit 1
+            fi
+            rolled="$rolled $svc"
+          done
+
+          failed=0
+          for svc in $rolled; do
+            echo "Waiting for $svc to stabilise"
+            if ! timeout 15m aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$svc"; then
+              echo "::error::Service '$svc' did not stabilise in time"
+              failed=1
+            fi
+          done
+          exit "$failed"

@@ -8,6 +8,11 @@ RUN npm ci
 
 # Copy source and build
 COPY . .
+
+# Same-origin URLs: CloudFront serves the app, /api, /ws-notifications and /uploads from one hostname
+ARG NEXT_PUBLIC_LANDING_URL
+ENV NEXT_PUBLIC_LANDING_URL=$NEXT_PUBLIC_LANDING_URL
+ENV NEXT_PUBLIC_API_URL="" NEXT_PUBLIC_WS_URL="" NEXT_PUBLIC_CDN_URL="" NEXT_IMAGE_UNOPTIMIZED=true
 RUN npm run build
 
 # Stage 2: Runtime

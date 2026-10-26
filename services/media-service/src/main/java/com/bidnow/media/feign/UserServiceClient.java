@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(name = "user-service")
+@FeignClient(name = "user-service", url = "${user-service.url:}")
 public interface UserServiceClient {
 
     @PostMapping("/api/v1/users/internal/notification-preferences")

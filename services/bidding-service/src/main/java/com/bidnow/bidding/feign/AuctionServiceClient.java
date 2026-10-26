@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "auction-service")
+@FeignClient(name = "auction-service", url = "${auction-service.url:}")
 public interface AuctionServiceClient {
 
     @GetMapping("/api/v1/internal/auctions/{id}/bid-context")

@@ -27,8 +27,14 @@ describe('resolveImageUrl', () => {
     expect(resolveImageUrl('uploads/u/a.jpg')).toBe('https://d1234abcd.cloudfront.net/uploads/u/a.jpg')
   })
 
-  it('returns undefined and logs when the CDN url is missing', () => {
+  it('returns a root-relative path when CDN url is empty string', () => {
     vi.stubEnv('NEXT_PUBLIC_CDN_URL', '')
+    expect(resolveImageUrl('uploads/a/b.jpg')).toBe('/uploads/a/b.jpg')
+    expect(resolveImageUrl('/uploads/a/b.jpg')).toBe('/uploads/a/b.jpg')
+  })
+
+  it('returns undefined and logs when the CDN url is missing', () => {
+    vi.stubEnv('NEXT_PUBLIC_CDN_URL', undefined)
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(resolveImageUrl('uploads/u/a.jpg')).toBeUndefined()
     expect(error).toHaveBeenCalled()
