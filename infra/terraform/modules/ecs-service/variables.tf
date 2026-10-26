@@ -131,6 +131,12 @@ variable "task_policy_json" {
   default     = null
 }
 
+variable "wait_for_steady_state" {
+  description = "Make Terraform wait until the service is running before it is considered created. Set it for services other services call, so the ones created after them can resolve their Service Connect names."
+  type        = bool
+  default     = false
+}
+
 variable "log_retention_days" {
   description = "CloudWatch log retention in days."
   type        = number

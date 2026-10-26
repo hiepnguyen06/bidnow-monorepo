@@ -220,7 +220,7 @@ terraform plan
 terraform apply
 ```
 
-Expect **25 to 35 minutes**, dominated by MSK cluster creation. The `terraform apply` is always run by hand; no pipeline applies or destroys infrastructure.
+Expect **35 to 45 minutes**: MSK takes about 20 to 30, and the ECS services are created in five tiers (servers first: user and wallet, then identity and auction, then media and bidding, then the gateway, then the frontend). Terraform waits for each of the first four tiers to be running before it creates the next, so a service never starts before the services it calls exist; ECS Service Connect only resolves the names that exist when a task starts. The `terraform apply` is always run by hand; no pipeline applies or destroys infrastructure.
 
 ### 4.6 Open the app
 
@@ -360,6 +360,14 @@ Expected: nothing from this stack (the `list-buckets` query prints `[]`). The st
 ## 7. Troubleshooting
 
 **Fargate or MSK quota errors during apply** (for example `You have requested more vCPU capacity than your current vCPU limit`, `ServiceQuotaExceeded`, or MSK `LimitExceeded`). Check and raise the quota as in section 3, then re-run `terraform apply`; it resumes where it stopped. ECS services stuck at 0 running tasks with the event `unable to place a task because ... vCPU` is the same cause.
+
+**A service cannot reach another one: `java.net.UnknownHostException: user-service`** (or another service name) in a service's log, for example a 500 from `POST /api/v1/auth/verify-otp` because identity-service cannot call user-service. ECS Service Connect only gives a task the names of services that already exist when the task starts, so a client started before its server cannot resolve it. `envs/demo` creates the services in tiers to prevent this (section 4.5). If you still see it, for example on a stack created before that change, force a new deployment of the affected services (all of them is safest) and wait for them to settle:
+
+```powershell
+$svcs = "frontend","api-gateway","identity-service","user-service","auction-service","bidding-service","wallet-service","media-service"
+foreach ($s in $svcs) { aws ecs update-service --cluster bidnow-demo --service $s --force-new-deployment --region ap-southeast-2 --query "service.serviceName" --output text }
+aws ecs wait services-stable --cluster bidnow-demo --region ap-southeast-2 --services $svcs
+```
 
 **`Push images first: see docs/deployment-aws.md`** at plan time: one or more ECR repositories do not contain the tag in `image_tag`. The message lists the repositories that are missing it. Push the images (section 4.3) or set `image_tag` to a tag that exists.
 

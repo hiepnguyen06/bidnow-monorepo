@@ -177,6 +177,19 @@ run "circuit_breaker_rollback_enabled" {
   }
 }
 
+run "waits_for_steady_state_only_when_asked" {
+  command = plan
+
+  variables {
+    wait_for_steady_state = true
+  }
+
+  assert {
+    condition     = aws_ecs_service.this.wait_for_steady_state == true
+    error_message = "wait_for_steady_state = true must make Terraform wait until the service is running (servers must be up before their clients start)."
+  }
+}
+
 run "autoscaling_target_is_cpu_60" {
   command = plan
 

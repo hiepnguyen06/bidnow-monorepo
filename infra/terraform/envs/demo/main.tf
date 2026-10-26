@@ -123,40 +123,66 @@ resource "terraform_data" "ecr_images_pushed" {
   }
 }
 
-module "ecs_service" {
-  source   = "../../modules/ecs-service"
-  for_each = local.services
+# The ECS services, created one tier at a time (see local.service_tiers in services.tf): a service
+# is created only after every service it calls exists, and, for tiers 1-4, is running. Otherwise a
+# client's tasks start before their servers are registered with Service Connect and cannot resolve
+# the servers' names. Tier 5 (the frontend) is nobody's server, so it does not wait.
+locals {
+  ecs_service_names = merge(
+    module.services_tier_1.service_names,
+    module.services_tier_2.service_names,
+    module.services_tier_3.service_names,
+    module.services_tier_4.service_names,
+    module.services_tier_5.service_names,
+  )
+}
 
-  name               = each.key
-  aws_region         = var.aws_region
-  cluster_name       = each.value.cluster_name
-  cluster_arn        = each.value.cluster_arn
-  namespace_arn      = each.value.namespace_arn
-  execution_role_arn = each.value.execution_role_arn
+module "services_tier_1" {
+  source = "../../modules/ecs-service-tier"
 
-  image  = each.value.image
-  port   = each.value.port
-  cpu    = each.value.cpu
-  memory = each.value.memory
-
-  desired_count = each.value.desired_count
-  min_count     = each.value.min_count
-  max_count     = each.value.max_count
-
-  subnet_ids         = each.value.subnet_ids
-  security_group_ids = each.value.security_group_ids
-  target_group_arn   = each.value.target_group_arn
-
-  env     = each.value.env
-  secrets = each.value.secrets
-
-  init_database          = each.value.init_database
-  db_host                = each.value.db_host
-  db_user                = each.value.db_user
-  db_password_secret_arn = each.value.db_password_secret_arn
-
-  task_policy_json = each.value.task_policy_json
+  services              = { for k, v in local.services : k => v if local.service_tiers[k] == 1 }
+  aws_region            = var.aws_region
+  wait_for_steady_state = true
 
   # module.alb: a target group must be attached to the listener (rules) before an ECS service uses it.
   depends_on = [terraform_data.ecr_images_pushed, module.alb]
+}
+
+module "services_tier_2" {
+  source = "../../modules/ecs-service-tier"
+
+  services              = { for k, v in local.services : k => v if local.service_tiers[k] == 2 }
+  aws_region            = var.aws_region
+  wait_for_steady_state = true
+
+  depends_on = [module.services_tier_1]
+}
+
+module "services_tier_3" {
+  source = "../../modules/ecs-service-tier"
+
+  services              = { for k, v in local.services : k => v if local.service_tiers[k] == 3 }
+  aws_region            = var.aws_region
+  wait_for_steady_state = true
+
+  depends_on = [module.services_tier_2]
+}
+
+module "services_tier_4" {
+  source = "../../modules/ecs-service-tier"
+
+  services              = { for k, v in local.services : k => v if local.service_tiers[k] == 4 }
+  aws_region            = var.aws_region
+  wait_for_steady_state = true
+
+  depends_on = [module.services_tier_3]
+}
+
+module "services_tier_5" {
+  source = "../../modules/ecs-service-tier"
+
+  services   = { for k, v in local.services : k => v if local.service_tiers[k] == 5 }
+  aws_region = var.aws_region
+
+  depends_on = [module.services_tier_4]
 }

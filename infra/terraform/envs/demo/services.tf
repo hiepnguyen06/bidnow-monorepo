@@ -10,6 +10,25 @@ locals {
     "media-service",
   ]
 
+  # Creation order, servers first. ECS Service Connect gives a task only the names of the services that
+  # already exist in the namespace when the task starts, so a client created at the same moment as its
+  # server fails with UnknownHostException (identity-service could not resolve user-service). Every
+  # service sits in a tier after all the services it calls; main.tf creates one tier at a time and the
+  # test services_are_created_servers_first checks this against each service's own URLs.
+  #   1: user, wallet (call nobody)         2: identity, auction (call user)
+  #   3: media (identity, user), bidding (user, auction, wallet)
+  #   4: api-gateway (calls all six)        5: frontend (calls api-gateway)
+  service_tiers = {
+    "user-service"     = 1
+    "wallet-service"   = 1
+    "identity-service" = 2
+    "auction-service"  = 2
+    "media-service"    = 3
+    "bidding-service"  = 3
+    "api-gateway"      = 4
+    "frontend"         = 5
+  }
+
   # Service Connect publishes each service as <name>:<port> in the bidnow.local namespace.
   service_urls = {
     identity = "http://identity-service:8081"
