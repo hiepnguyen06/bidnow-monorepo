@@ -85,7 +85,9 @@ jobs:
 
   bdd-test:
     name: BDD Tests
-    runs-on: ubuntu-latest
+    # Pinned: on the ubuntu-26.04 image behind ubuntu-latest, Testcontainers reports
+    # "Could not find a valid Docker environment" and every scenario errors.
+    runs-on: ubuntu-24.04
     permissions:
       checks: write
       contents: read
