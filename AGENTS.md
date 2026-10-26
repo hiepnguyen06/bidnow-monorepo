@@ -23,7 +23,7 @@ Before making any significant architectural changes, always read the relevant do
 - **Database:** PostgreSQL 15+. 
   - **Constraint:** Each microservice MUST have its own independent database. Do not introduce cross-database queries or shared databases between microservices.
 - **Messaging:** RabbitMQ or Apache Kafka. Use event-driven patterns for inter-service communication.
-- **Caching & Real-time:** Redis is used for global caching, sessions, and high-performance bid leaderboards.
+- **Caching & Real-time:** Redis caches each auction's bid context for fast bid pre-validation (plus deposit flags, bidder names and category lists) and holds media-service's outbid/new-bid batching windows.
 
 ### Frontend Architecture
 - **Framework:** Next.js (TypeScript)

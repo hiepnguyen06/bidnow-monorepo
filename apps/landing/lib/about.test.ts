@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEVELOPERS, PRINCIPLES, STACK, githubUrl, initials } from './about'
+import { BUILT, DEVELOPERS, NOT_BUILT, STACK, githubUrl, initials } from './about'
 
 describe('initials', () => {
   it('uses the first letter of each word', () => {
@@ -32,8 +32,9 @@ describe('about content', () => {
     for (const { handle } of DEVELOPERS) expect(handle).toMatch(/^[A-Za-z0-9-]+$/)
   })
 
-  it('numbers the principles in order', () => {
-    expect(PRINCIPLES.map((p) => p.n)).toEqual(PRINCIPLES.map((_, i) => `0${i + 1}`))
+  it('lists something under both project status groups', () => {
+    expect(BUILT.items.length).toBeGreaterThan(0)
+    expect(NOT_BUILT.items.length).toBeGreaterThan(0)
   })
 
   it('gives every tech-stack group at least one item, with unique group titles', () => {

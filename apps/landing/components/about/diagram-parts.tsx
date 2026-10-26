@@ -211,16 +211,3 @@ export function Arrow({ prefix, tone, d, dashed = false, head = true, both = fal
     />
   )
 }
-
-/** Short line sample for a legend entry. */
-export function LegendLine({ x, y, tone, dashed = false }: { x: number; y: number; tone: Tone; dashed?: boolean }) {
-  return (
-    <path
-      d={`M${x} ${y} H${x + 32}`}
-      fill="none"
-      strokeWidth={2}
-      strokeDasharray={dashed ? '6 6' : undefined}
-      style={{ stroke: TONE_COLOR[tone] }}
-    />
-  )
-}

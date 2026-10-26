@@ -158,7 +158,7 @@ Mark `[x]` for each item checked. Write `N/A` if not applicable.
 
 - [ ] Real-time bid updates published via event (RabbitMQ/Kafka) — no direct service-to-service DB calls
 - [ ] Anti-sniping logic (time extension) handled correctly inside the Bidding Service
-- [ ] Bid leaderboard reads from Redis — not queried directly from the DB
+- [ ] Bid pre-validation reads the cached auction context from Redis; the authoritative check stays in auction-service's row-locked apply-bid
 - [ ] WebSocket notifications use the correct topic pattern (`/topic/auction/{auctionId}`)
 - [ ] No shared database between microservices
 
