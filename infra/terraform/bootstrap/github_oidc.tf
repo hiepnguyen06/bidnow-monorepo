@@ -2,9 +2,11 @@ locals {
   oidc_host = "token.actions.githubusercontent.com"
 
   # Both push-to-main and workflow_dispatch runs started from main carry this
-  # same ref-based subject, so a single value covers them.
+  # same ref-based subject, so a single value covers them. The prefix is either the
+  # classic "repo:<owner>/<repo>" or, for repositories on GitHub's immutable subject
+  # claim, "repo:<owner>@<owner-id>/<repo>@<repo-id>" (see var.github_sub_claim_prefix).
   oidc_provider_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_host}"
-  github_sub        = "repo:${var.github_repository}:ref:refs/heads/main"
+  github_sub        = "${coalesce(var.github_sub_claim_prefix, "repo:${var.github_repository}")}:ref:refs/heads/main"
 
   ecs_cluster_name = "bidnow-demo"
   ecs_cluster_arn  = "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/${local.ecs_cluster_name}"

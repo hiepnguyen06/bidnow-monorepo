@@ -85,6 +85,36 @@ run "oidc_trust_is_limited_to_main_and_dispatch" {
   }
 }
 
+run "oidc_trust_uses_the_immutable_sub_claim_prefix" {
+  command = plan
+
+  # Repositories that use GitHub's immutable subject claim get tokens like
+  # repo:<owner>@<owner-id>/<repo>@<repo-id>:ref:refs/heads/main.
+  variables {
+    github_sub_claim_prefix = "repo:octo@1234/bidnow-monorepo@5678"
+  }
+
+  assert {
+    condition     = jsondecode(aws_iam_role.github_deploy.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == ["repo:octo@1234/bidnow-monorepo@5678:ref:refs/heads/main"]
+    error_message = "Trust policy sub must be the configured prefix plus the main ref, and nothing else."
+  }
+
+  assert {
+    condition     = !can(jsondecode(aws_iam_role.github_deploy.assume_role_policy).Statement[0].Condition.StringLike)
+    error_message = "Trust policy must not use wildcard (StringLike) conditions."
+  }
+}
+
+run "wildcards_in_the_sub_claim_prefix_are_rejected" {
+  command = plan
+
+  variables {
+    github_sub_claim_prefix = "repo:*"
+  }
+
+  expect_failures = [var.github_sub_claim_prefix]
+}
+
 run "budget_has_email_subscriber" {
   command = plan
 
