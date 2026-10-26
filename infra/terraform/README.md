@@ -7,7 +7,7 @@ AWS infrastructure of BidNow (ECS Fargate, RDS, ElastiCache, MSK, S3, CloudFront
 | Path | Purpose |
 |------|---------|
 | `bootstrap/` | Applied once, never destroyed. Owns the S3 state bucket, 8 ECR repositories, the GitHub OIDC provider with the deploy role, and the AWS Budget alert. Local backend. |
-| `modules/` | Reusable modules: `network`, `alb`, `cloudfront`, `ecs-cluster`, `ecs-service` (used for each of the 8 services), `rds`, `elasticache`, `msk`, `s3-media`, `secrets`. |
+| `modules/` | Reusable modules: `network`, `alb`, `cloudfront`, `ecs-cluster`, `ecs-service` (used for each of the 8 services), `ecs-service-tier` (creates one tier of services; `envs/demo` chains five of them so servers exist before their clients), `rds`, `elasticache`, `msk`, `s3-media`, `secrets`. |
 | `envs/demo/` | The stack that is applied and destroyed on demand. Wires all modules together. Remote state in the bootstrap bucket (S3 backend with `use_lockfile`). Needs Terraform >= 1.10 and the aws provider >= 6.5. |
 
 Typical flow: apply `bootstrap`, push images to ECR, `terraform init -backend-config=...` and apply `envs/demo`, then destroy it when finished. Exact commands are in the runbook.

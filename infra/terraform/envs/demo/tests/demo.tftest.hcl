@@ -139,12 +139,12 @@ run "eight_services_defined" {
   }
 
   assert {
-    condition     = toset(keys(module.ecs_service)) == toset(keys(local.services))
-    error_message = "One ecs-service module instance per service."
+    condition     = toset(keys(local.ecs_service_names)) == toset(keys(local.services))
+    error_message = "Every service is created in exactly one tier."
   }
 
   assert {
-    condition     = alltrue([for k, v in module.ecs_service : v.service_name == k])
+    condition     = alltrue([for k, v in local.ecs_service_names : v == k])
     error_message = "Each ECS service is named after its key (the Service Connect DNS name)."
   }
 
@@ -398,6 +398,34 @@ run "frontend_has_internal_api_url" {
   assert {
     condition     = [for k, s in local.services : k if contains(keys(s.env), "API_INTERNAL_URL")] == ["frontend"]
     error_message = "Only the frontend gets API_INTERNAL_URL."
+  }
+}
+
+run "services_are_created_servers_first" {
+  command = apply
+
+  # ECS Service Connect gives a task only the names of services that already exist when the task
+  # starts. identity-service started before user-service existed and failed with
+  # UnknownHostException: user-service. The dependency is derived from each service's own env:
+  # every http://<service>:<port> it is configured with must be a service in an EARLIER tier.
+  assert {
+    condition     = toset(keys(local.service_tiers)) == toset(local.service_names)
+    error_message = "Every service needs a tier."
+  }
+
+  assert {
+    condition = alltrue(flatten([
+      for name, s in local.services : [
+        for k, v in s.env : local.service_tiers[regex("^http://([a-z-]+):[0-9]+$", v)[0]] < local.service_tiers[name]
+        if can(regex("^http://([a-z-]+):[0-9]+$", v))
+      ]
+    ]))
+    error_message = "A service must be created after every service it calls (tiers: servers first, clients later)."
+  }
+
+  assert {
+    condition     = length(flatten([for name, s in local.services : [for k, v in s.env : k if can(regex("^http://([a-z-]+):[0-9]+$", v))]])) == 14
+    error_message = "Expected 14 service-to-service URLs (gateway 6, identity 1, auction 1, bidding 3, media 2, frontend 1). This guard stops the ordering test above from passing vacuously; if the count changes, check the tiers still put every caller after its servers."
   }
 }
 

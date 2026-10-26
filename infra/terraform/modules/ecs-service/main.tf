@@ -124,7 +124,7 @@ resource "aws_ecs_service" "this" {
   task_definition        = aws_ecs_task_definition.this.arn
   launch_type            = "FARGATE"
   desired_count          = var.desired_count
-  wait_for_steady_state  = false
+  wait_for_steady_state  = var.wait_for_steady_state
   enable_execute_command = false
 
   health_check_grace_period_seconds = var.target_group_arn == null ? null : 120
