@@ -278,9 +278,9 @@ export default function ArchitecturePage() {
         <figure className="m-0">
           <div className={cn(DIAGRAM_FRAME, 'bg-white')}>
             <Image
-              src="/architecture/aws-deployment.svg"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/architecture/aws-deployment.svg`}
               width={1728}
-              height={1084}
+              height={1025}
               alt="BidNow on AWS. Users reach CloudFront, which serves uploaded media from a private S3 bucket and forwards everything else through an Internet gateway to an Application Load Balancer in the public subnets. The load balancer sends page requests to the frontend and API and WebSocket requests to the API gateway, which calls six services on ECS Fargate in private subnets. Those services use RDS PostgreSQL, ElastiCache Redis and Amazon MSK in isolated data subnets. Secrets Manager, ECR, IAM and a NAT gateway support the cluster."
               className="block h-auto w-full min-w-[1400px]"
               unoptimized
