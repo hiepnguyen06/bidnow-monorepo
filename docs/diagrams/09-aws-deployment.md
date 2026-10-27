@@ -2,6 +2,8 @@
 
 Three-tier layout of the `envs/demo` Terraform stack in `ap-southeast-2`. CloudFront is the only public entry point; the ALB accepts traffic only from CloudFront (security group on the managed prefix list plus the secret `X-Origin-Verify` header). Fargate tasks, RDS, ElastiCache and MSK have no public addresses. The `bootstrap` stack (state bucket, ECR, GitHub OIDC role, budget) is applied once and never destroyed. See [deployment-aws.md](../deployment-aws.md) for the runbook. Internal service-to-service calls (Feign, other than the two bidding-service edges shown) and per-service Kafka usage are simplified.
 
+An editable draw.io version with the official AWS icons is in [09-aws-deployment.drawio](09-aws-deployment.drawio) (open it with diagrams.net or the VS Code draw.io extension).
+
 ```mermaid
 flowchart TB
     User([Browser])
@@ -77,7 +79,8 @@ flowchart TB
     BI --> MSK
     WA --> MSK
     ME --> MSK
-    ME -->|"presigned PUT, task role"| S3
+    ME -->|"PutObject, task role, via S3 gateway endpoint"| S3
+    User -.->|"presigned PUT, direct"| S3
     ME --> NAT --> SMTP
 
     SM -.->|"ECS secrets"| App
